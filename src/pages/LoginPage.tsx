@@ -198,12 +198,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     Password
                   </label>
 
-                  {/* <Link
+                  <Link
                     to="/forgot-password"
                     className="text-xs font-bold text-[#43937c] hover:underline"
                   >
                     Forgot Password?
-                  </Link> */}
+                  </Link>
                 </div>
 
                 <div className="relative">

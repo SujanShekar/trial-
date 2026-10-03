@@ -56,6 +56,11 @@ const HousekeepingPage: React.FC = () => {
 
   const lowStockCount = useMemo(() => housekeepingSupplies.filter(s => s.quantity <= s.minStockLevel && s.minStockLevel > 0).length, [housekeepingSupplies]);
 
+  const uniqueSupplyNames = useMemo(() => {
+    const names = new Set(housekeepingSupplies.map(s => s.name));
+    return Array.from(names).sort();
+  }, [housekeepingSupplies]);
+
   const handleOpenAdd = () => {
     setModalMode('add');
     setCurrentSupply({ name: '', quantity: 0, minStockLevel: 0, unit: 'Units' });
@@ -94,14 +99,25 @@ const HousekeepingPage: React.FC = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'add') {
-      const newItem: HousekeepingSupply = {
-        id: `hk-${Date.now()}`,
-        name: currentSupply.name!,
-        quantity: Number(currentSupply.quantity),
-        minStockLevel: Number(currentSupply.minStockLevel),
-        unit: currentSupply.unit!
-      };
-      addHousekeepingSupply(newItem);
+      const existingSupply = housekeepingSupplies.find(s => s.name.toLowerCase() === currentSupply.name?.toLowerCase());
+      
+      if (existingSupply) {
+        updateHousekeepingSupply({
+          ...existingSupply,
+          quantity: existingSupply.quantity + Number(currentSupply.quantity),
+          minStockLevel: Number(currentSupply.minStockLevel) || existingSupply.minStockLevel,
+          unit: currentSupply.unit || existingSupply.unit
+        });
+      } else {
+        const newItem: HousekeepingSupply = {
+          id: `hk-${Date.now()}`,
+          name: currentSupply.name!,
+          quantity: Number(currentSupply.quantity),
+          minStockLevel: Number(currentSupply.minStockLevel),
+          unit: currentSupply.unit!
+        };
+        addHousekeepingSupply(newItem);
+      }
     } else {
       updateHousekeepingSupply({ ...currentSupply } as HousekeepingSupply);
     }
@@ -370,11 +386,18 @@ const HousekeepingPage: React.FC = () => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Item Name</label>
                 <input 
                   required 
+                  list="supply-names-list"
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-black focus:ring-2 focus:ring-[#005F54]/10 focus:border-[#005F54] focus:outline-none transition-all" 
                   value={currentSupply.name} 
                   onChange={e => setCurrentSupply({...currentSupply, name: e.target.value})} 
                   placeholder="e.g. White Phenyl"
+                  autoComplete="off"
                 />
+                <datalist id="supply-names-list">
+                  {uniqueSupplyNames.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-6">

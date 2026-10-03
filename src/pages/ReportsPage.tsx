@@ -55,11 +55,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
     document.body.removeChild(link);
   };
 
+  const exportDonations = () => {
+    const formattedDonations = donations.map(d => {
+      const dDate = new Date(d.date || d.createdAt || Date.now());
+      return {
+        ...d,
+        Day: dDate.toLocaleString('default', { weekday: 'long' }),
+        Month: dDate.toLocaleString('default', { month: 'long' }),
+        Year: dDate.getFullYear()
+      };
+    });
+    generateCSV(formattedDonations, 'pfa_donations_annual_report');
+  };
+
   const handleExportAll = () => {
     generateCSV(medicines, 'pfa_meds_stock');
     generateCSV(staff, 'pfa_staff_volunteer_list');
     generateCSV(abcRecords, 'pfa_abc_detailed_report');
-    generateCSV(donations, 'pfa_donations_annual_report');
+    exportDonations();
     generateCSV(adoptions, 'pfa_adoption_annual_report');
     
     const censusData = reportCases.filter(c => c.status === CaseStatus.RELEASED || c.status === CaseStatus.PERMANENT);
@@ -103,7 +116,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       icon: IndianRupee, 
       color: 'bg-indigo-50 text-indigo-600',
       roles: ['Admin'],
-      action: () => generateCSV(donations, 'pfa_donations_annual_report')
+      action: exportDonations
     },
     { 
       id: 'adoptions', 

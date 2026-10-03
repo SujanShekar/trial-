@@ -6,7 +6,7 @@ export const saveAuthToken = (token: string) => localStorage.setItem(AUTH_TOKEN_
 
 export const clearAuthToken = () => localStorage.removeItem(AUTH_TOKEN_KEY);
 
-export const apiFetch = (input: RequestInfo | URL, init: RequestInit = {}) => {
+export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   const token = getAuthToken();
   const headers = new Headers(init.headers);
 
@@ -14,5 +14,14 @@ export const apiFetch = (input: RequestInfo | URL, init: RequestInit = {}) => {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  return fetch(input, { ...init, headers });
+  const response = await fetch(input, { ...init, headers });
+  
+  if (response.status === 401) {
+    clearAuthToken();
+    localStorage.removeItem("pfa_user_session");
+    window.location.hash = "#/";
+    window.location.reload();
+  }
+  
+  return response;
 };

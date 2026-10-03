@@ -73,18 +73,19 @@ const DashboardPage: React.FC<DashboardProps> = ({ user }) => {
   }, []);
 
   const recentActivities = useMemo(() => {
-    if (!stats) return [];
+    if (!stats || !stats.recentActivities || !Array.isArray(stats.recentActivities)) return [];
     return stats.recentActivities.map((c: any) => {
-      const animalType = c.title.split(' ')[0] || 'Animal';
+      const animalType = c.title?.split(' ')[0] || 'Animal';
       return {
         id: c.id,
         animal: animalType,
-        action: c.description.substring(0, 30) + (c.description.length > 30 ? '...' : ''),
+        action: c.description ? c.description.substring(0, 30) + (c.description.length > 30 ? '...' : '') : '',
         time: 'Recently',
         status: c.status
       };
     });
   }, [stats]);
+
 
   if (isLoading || isStatsLoading) {
     return (

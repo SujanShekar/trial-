@@ -49,8 +49,8 @@ const StaffPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    type: 'Staff',
-    role: 'Staff',
+    type: '',
+    role: '',
     phone: '',
     joinedDate: new Date().toISOString().split('T')[0],
     bankFullName: '',
@@ -152,7 +152,8 @@ const StaffPage: React.FC = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      role: 'Staff',
+      type: '',
+      role: '',
       phone: '',
       joinedDate: new Date().toISOString().split('T')[0],
       bankFullName: '',
@@ -496,10 +497,15 @@ const StaffPage: React.FC = () => {
               <div className="pt-10 border-t border-slate-100 flex flex-col items-center">
                 <button 
                   type="submit" 
-                  className="w-full max-w-lg bg-[#005F54] text-white py-6 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-emerald-900/30 hover:bg-[#004a42] transition-all flex items-center justify-center gap-4 active:scale-[0.98]"
+                  disabled={!isEditMode && !formData.type}
+                  className={`w-full max-w-lg py-6 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-4 ${(!isEditMode && !formData.type) ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-[#005F54] text-white hover:bg-[#004a42] shadow-emerald-900/30 active:scale-[0.98]'}`}
                 >
                   <Save size={20} />
-                  {isEditMode ? 'Update Member Profile' : 'Finalize Registry Intake'}
+                  {isEditMode 
+                    ? 'Update Member Profile' 
+                    : formData.type 
+                      ? `Add ${formData.type}` 
+                      : 'Add'}
                 </button>
                 <p className="mt-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
                    <Info size={12} /> Data is secured via PFA internal registry protocols
