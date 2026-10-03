@@ -27,11 +27,10 @@ const HistoryPage: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<HistoryRecord | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = async (file: File) => {
 
     setIsScanning(true);
     setScannedData(null);
@@ -56,7 +55,7 @@ const HistoryPage: React.FC = () => {
                 },
               },
               {
-                text: 'Extract the Case Number, Animal Type, Location, Date, and a brief Description from this animal rescue document image. Return results in JSON format.',
+                text: 'Extract the Case Number, Animal Type, Location, Date, and a brief Description from this animal rescue document image or video. Return results in JSON format.',
               },
             ],
           },
@@ -87,6 +86,28 @@ const HistoryPage: React.FC = () => {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   const handlePrint = () => {
@@ -121,18 +142,23 @@ const HistoryPage: React.FC = () => {
 
       <div className="max-w-4xl mx-auto">
         {!scannedData && !isScanning ? (
-          <div className="bg-white rounded-[3rem] border-4 border-dashed border-slate-100 p-20 flex flex-col items-center justify-center text-center space-y-8 animate-in zoom-in duration-300 no-print">
+          <div 
+            className={`bg-white rounded-[3rem] border-4 border-dashed transition-colors p-20 flex flex-col items-center justify-center text-center space-y-8 animate-in zoom-in duration-300 no-print ${isDragging ? 'border-[#005F54] bg-emerald-50/50' : 'border-slate-100'}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
              <div className="w-32 h-32 bg-emerald-50 rounded-full flex items-center justify-center text-[#005F54] shadow-inner">
                 <ImageIcon size={48} className="animate-pulse" />
              </div>
              <div>
                 <h2 className="text-2xl font-black text-slate-800">Ready to Scan</h2>
-                <p className="text-slate-500 font-medium max-w-sm mt-2">Upload a photo of an old case sheet or document to extract details and generate a digital registry entry.</p>
+                <p className="text-slate-500 font-medium max-w-sm mt-2">Upload or drag and drop a photo or video of an old case sheet or document to extract details and generate a digital registry entry.</p>
              </div>
              <label className="group relative cursor-pointer bg-[#005F54] hover:bg-[#004a42] text-white px-12 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-emerald-900/20 transition-all active:scale-95 flex items-center gap-3">
                 <Upload size={20} />
-                Choose Image
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                Choose Media (Image/Video)
+                <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
              </label>
           </div>
         ) : isScanning ? (
