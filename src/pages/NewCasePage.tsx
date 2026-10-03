@@ -31,6 +31,7 @@ const NewCasePage: React.FC = () => {
   const { addCase, isLoading } = useAppContext();
   const areaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   
   // Skip selection view if coming from declaration redirection
   const fromDeclaration = location.state?.fromDeclaration || false;
@@ -43,6 +44,7 @@ const NewCasePage: React.FC = () => {
   const [isCustomAreaMode, setIsCustomAreaMode] = useState(false);
   const [customAreaInput, setCustomAreaInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   
   // Helper to get formatted current time matching INITIAL_CASES format (24h)
   const getFormattedNow = () => {
@@ -152,6 +154,9 @@ const NewCasePage: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedVideo(e.target.files?.[0] || null);
+  };
 const isFormValid =
   formData.caseNumber.trim() !== '' &&
   formData.rescueArea.trim() !== '' &&
@@ -252,6 +257,7 @@ const isFormValid =
   }`;
 
   let finalImageUrl = selectedImage || undefined;
+  let finalVideoUrl: string | undefined;
 
   // Simulation Upload Logic
   if (selectedImage && selectedImage.startsWith('data:')) {
@@ -270,6 +276,15 @@ const isFormValid =
       console.error('Simulation upload failed:', error);
     }
   };
+
+  if (selectedVideo) {
+    try {
+      const uploadedUrl = await uploadFile(selectedVideo);
+      if (uploadedUrl) finalVideoUrl = uploadedUrl;
+    } catch (error) {
+      console.error('Video upload failed:', error);
+    }
+  }
 
   // Get current user from local session
   const savedUser = localStorage.getItem('pfa_user_session');
@@ -290,6 +305,7 @@ Reporter Address: ${trimmedCompAddress}`,
     status: CaseStatus.UNDER_TREATMENT,
     // reportedById: user?.id,
     imageUrl: finalImageUrl,
+    videoUrl: finalVideoUrl,
     createdAt: new Date().toISOString()
   };
 
@@ -556,6 +572,38 @@ Reporter Address: ${trimmedCompAddress}`,
                 value={formData.compAddress}
                 onChange={e => setFormData({...formData, compAddress: e.target.value})}
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Video (optional)</label>
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                ref={videoInputRef}
+                onChange={handleVideoChange}
+              />
+              <div
+                onClick={() => videoInputRef.current?.click()}
+                className={`flex items-center gap-4 p-5 rounded-[2rem] border-2 border-dashed transition-all group cursor-pointer ${selectedVideo ? 'bg-emerald-50 border-[#005F54]' : 'bg-slate-50 border-slate-200 hover:border-[#005F54]/50'}`}
+              >
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${selectedVideo ? 'bg-white border-[#005F54]/20 text-[#005F54]' : 'bg-white border-slate-200 text-slate-300 group-hover:text-[#005F54]'}`}>
+                  <Camera size={24} />
+                </div>
+                <div className="text-sm flex-1">
+                  <p className={`font-black uppercase text-xs tracking-widest ${selectedVideo ? 'text-[#005F54]' : 'text-slate-700'}`}>{selectedVideo ? 'Video selected' : 'Scene video'}</p>
+                  <p className="text-slate-400 text-xs font-medium mt-1">{selectedVideo?.name || 'Upload an optional video from the rescue scene.'}</p>
+                </div>
+                {selectedVideo && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelectedVideo(null); if (videoInputRef.current) videoInputRef.current.value = ''; }}
+                    className="p-2 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

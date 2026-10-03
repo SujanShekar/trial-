@@ -54,21 +54,20 @@ router.get('/', async (req, res) => {
 // every adoption record just to show headline totals.
 router.get('/stats', async (_req, res) => {
   try {
-    const adoptions = await prisma.adoption.findMany({
-      include: { animal: { select: { species: true } } },
+    const applications = await prisma.adoptionApplication.findMany({
       orderBy: { createdAt: 'asc' },
     });
 
     const byMonth: Record<string, number> = {};
     const byAnimalType: Record<string, number> = {};
-    for (const adoption of adoptions) {
-      const month = adoption.createdAt.toISOString().slice(0, 7);
+    for (const application of applications) {
+      const month = application.createdAt.toISOString().slice(0, 7);
       byMonth[month] = (byMonth[month] || 0) + 1;
-      const animalType = adoption.animal.species || 'Unknown';
+      const animalType = application.animalType || 'Unknown';
       byAnimalType[animalType] = (byAnimalType[animalType] || 0) + 1;
     }
 
-    res.json({ total: adoptions.length, byMonth, byAnimalType });
+    res.json({ total: applications.length, byMonth, byAnimalType });
   } catch (error) {
     sendError(res, error, 'Failed to fetch adoption statistics');
   }

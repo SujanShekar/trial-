@@ -30,7 +30,7 @@ const ABCPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    animalId: '',
+    animalType: 'Dog',
     maleCount: '',
     femaleCount: '',
     area: '',
@@ -43,7 +43,7 @@ const ABCPage: React.FC = () => {
   const handleRegisterClick = () => {
     setEditingId(null);
     setFormData({
-      animalId: animals[0]?.id || '',
+      animalType: 'Dog',
       maleCount: '',
       femaleCount: '',
       area: '',
@@ -58,7 +58,7 @@ const ABCPage: React.FC = () => {
   const handleEditClick = (record: ABCRecord) => {
     setEditingId(record.id);
     setFormData({
-      animalId: record.animalId || '',
+      animalType: record.animalType || animals.find(animal => animal.id === record.animalId)?.species || 'Dog',
       maleCount: record.maleCount?.toString() || '',
       femaleCount: record.femaleCount?.toString() || '',
       area: record.area || '',
@@ -79,8 +79,8 @@ const ABCPage: React.FC = () => {
       femaleCount: formData.femaleCount ? parseInt(formData.femaleCount) : undefined,
     };
 
-    if (!formData.animalId && !formData.maleCount && !formData.femaleCount) {
-      alert("Please select an Animal or enter male/female counts.");
+    if (!formData.animalType && !formData.maleCount && !formData.femaleCount) {
+      alert("Please select an animal type or enter male/female counts.");
       return;
     }
 
@@ -117,7 +117,7 @@ const ABCPage: React.FC = () => {
   const filteredRecords = useMemo(() => {
     return abcRecords.filter(r => {
       const animal = animals.find(a => a.id === r.animalId);
-      const animalName = animal ? `${animal.name} (${animal.species})` : 'Unknown Animal';
+      const animalName = animal ? `${animal.name} (${animal.species})` : r.animalType || 'Unknown Animal';
       const matchesSearch = animalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (r.remarks || '').toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -226,11 +226,11 @@ const ABCPage: React.FC = () => {
                         <td className="px-10 py-6">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#005F54] flex items-center justify-center font-black shadow-sm group-hover:bg-[#005F54] group-hover:text-white transition-all">
-                              {animal?.species.charAt(0) || <MapPin size={18} />}
+                              {animal?.species.charAt(0) || r.animalType?.charAt(0) || <MapPin size={18} />}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-base font-black text-slate-800 tracking-tight">{animal?.name || r.area || 'Unknown'}</span>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase">{animal?.species || 'Batch Program'}</span>
+                              <span className="text-base font-black text-slate-800 tracking-tight">{animal?.name || r.animalType || r.area || 'Unknown'}</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{animal?.species || r.animalType || 'Batch Program'}</span>
                             </div>
                           </div>
                         </td>
@@ -361,17 +361,15 @@ const ABCPage: React.FC = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Individual Animal (Optional)</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Animal Type</label>
                     <div className="relative">
                       <select 
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-[#005F54]/5 focus:border-[#005F54] appearance-none cursor-pointer transition-all"
-                        value={formData.animalId}
-                        onChange={e => setFormData({...formData, animalId: e.target.value})}
+                        value={formData.animalType}
+                        onChange={e => setFormData({...formData, animalType: e.target.value})}
                       >
-                        <option value="">None / Multiple</option>
-                        {animals.map(a => (
-                          <option key={a.id} value={a.id}>{a.name} ({a.species})</option>
-                        ))}
+                        <option value="Dog">Dog</option>
+                        <option value="Cat">Cat</option>
                       </select>
                       <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                     </div>

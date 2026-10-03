@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../app';
 import { prismaMock } from './setup';
+import { issueAuthToken } from '../auth/token';
 
 describe('Transactional & Other Entity APIs', () => {
   it('should create a wildlife case', async () => {
@@ -13,6 +14,17 @@ describe('Transactional & Other Entity APIs', () => {
     prismaMock.staffMember.create.mockResolvedValue({ id: 's-1' } as any);
     const res = await request(app).post('/api/staff').send({ name: 'John', role: 'Vet' });
     expect(res.status).toBe(201);
+  });
+
+  it('should allow doctors to fetch the staff directory', async () => {
+    prismaMock.staffMember.findMany.mockResolvedValue([{ id: 'doctor-1', name: 'Dr. Mira', type: 'Doctor', role: 'Veterinarian' }] as any);
+
+    const res = await request(app)
+      .get('/api/staff')
+      .set('Authorization', `Bearer ${issueAuthToken('doctor-1', 'Doctor')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].name).toBe('Dr. Mira');
   });
 
   it('should create a donation', async () => {
@@ -61,6 +73,25 @@ describe('Transactional & Other Entity APIs', () => {
         vaccinationDone: true,
         surgeryDate: '2025-01-01'
       }
+    });
+  });
+
+  it('should store an ABC record animal type without an animal reference', async () => {
+    prismaMock.aBCRecord.create.mockResolvedValue({ id: 'abc-2', animalId: null, animalType: 'Cat' } as any);
+
+    const res = await request(app)
+      .post('/api/abc-records')
+      .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
+      .send({
+        animalType: ' Cat ',
+        sterilized: true,
+        vaccinationDone: true,
+        surgeryDate: '2025-01-01'
+      });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.aBCRecord.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ animalType: 'Cat' })
     });
   });
 

@@ -71,6 +71,7 @@ model Case {
   status      CaseStatus @default(open)
   reportedById String?   @map("reported_by")
   imageUrl    String?    @map("image_url")
+  videoUrl    String?    @map("video_url")
   createdAt   DateTime   @default(now()) @map("created_at")
 
   reporter    User?      @relation("ReportedBy", fields: [reportedById], references: [id])
@@ -123,6 +124,7 @@ model WildlifeCase {
 model ABCRecord {
   id              String   @id @default(uuid())
   animalId        String?  @map("animal_id")
+  animalType      String?  @map("animal_type")
   maleCount       Int?     @map("male_count")
   femaleCount     Int?     @map("female_count")
   area            String?

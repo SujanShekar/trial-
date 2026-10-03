@@ -99,19 +99,16 @@ const HousekeepingPage: React.FC = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (modalMode === 'add') {
-      const existingSupply = housekeepingSupplies.find(s => s.name.toLowerCase() === currentSupply.name?.toLowerCase());
+      const name = currentSupply.name?.trim() || '';
+      const existingSupply = housekeepingSupplies.find(s => s.name.trim().toLowerCase() === name.toLowerCase());
       
       if (existingSupply) {
-        updateHousekeepingSupply({
-          ...existingSupply,
-          quantity: existingSupply.quantity + Number(currentSupply.quantity),
-          minStockLevel: Number(currentSupply.minStockLevel) || existingSupply.minStockLevel,
-          unit: currentSupply.unit || existingSupply.unit
-        });
+        alert('An item with this name already exists');
+        return;
       } else {
         const newItem: HousekeepingSupply = {
           id: `hk-${Date.now()}`,
-          name: currentSupply.name!,
+          name,
           quantity: Number(currentSupply.quantity),
           minStockLevel: Number(currentSupply.minStockLevel),
           unit: currentSupply.unit!

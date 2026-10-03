@@ -107,7 +107,21 @@ router.get('/export', async (req, res) => {
 
 
   try {
+    const range = String(req.query.range || 'all').toLowerCase();
+    const now = new Date();
+    let start: Date | undefined;
+
+    if (range === 'week') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    } else if (range === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (range === 'year') {
+      start = new Date(now.getFullYear(), 0, 1);
+    }
+
     const cases = await prisma.case.findMany({
+      where: start ? { createdAt: { gte: start } } : undefined,
       include: { reporter: true, clinicalEntries: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -141,11 +155,13 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-
-    console.log("BODY:", req.body);
+    const { videoUrl, ...caseData } = sanitizeData(req.body);
 
     const newCase = await prisma.case.create({
-      data: sanitizeData(req.body)
+      data: {
+        ...caseData,
+        ...(typeof videoUrl === 'string' && videoUrl ? { videoUrl } : {})
+      }
     });
 
     res.status(201).json(newCase);

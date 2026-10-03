@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../app';
 import { prismaMock } from './setup';
+import { issueAuthToken } from '../auth/token';
 
 describe('Inventory & Medical API', () => {
   it('should list medicines', async () => {
@@ -36,6 +37,7 @@ describe('Inventory & Medical API', () => {
   });
 
   it('should create housekeeping supply', async () => {
+    prismaMock.housekeepingSupply.findFirst.mockResolvedValue(null);
     prismaMock.housekeepingSupply.create.mockResolvedValue({ id: 'h-1', name: 'Soap' } as any);
 
     const res = await request(app)
@@ -44,5 +46,18 @@ describe('Inventory & Medical API', () => {
 
     expect(res.status).toBe(201);
     expect(prismaMock.housekeepingSupply.create).toHaveBeenCalled();
+  });
+
+  it('should reject a housekeeping supply with a duplicate name regardless of case', async () => {
+    prismaMock.housekeepingSupply.findFirst.mockResolvedValue({ id: 'h-1', name: 'Soap' } as any);
+
+    const res = await request(app)
+      .post('/api/inventory/housekeeping')
+      .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
+      .send({ name: '  soap  ', quantity: 10, minStockLevel: 2, unit: 'pcs' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('An item with this name already exists');
+    expect(prismaMock.housekeepingSupply.create).not.toHaveBeenCalled();
   });
 });

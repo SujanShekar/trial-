@@ -75,6 +75,9 @@ router.post('/forgot-password', async (req, res) => {
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     otpStore.set(email, { otp, expires });
+    // EMAIL_USER and EMAIL_PASS must be set in .env for real email delivery.
+    // Keep this fallback visible locally even if the email provider is not configured.
+    console.log(`OTP for ${email} is ${otp}`);
 
     // Send email
     try {
@@ -85,7 +88,6 @@ router.post('/forgot-password', async (req, res) => {
         text: `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`,
         html: `<p>Your OTP for password reset is: <b>${otp}</b></p><p>It will expire in 10 minutes.</p>`,
       });
-      console.log(`OTP for ${email} is ${otp}`); // Helpful for local development
     } catch (emailError) {
       console.error("Failed to send email, you probably need to configure EMAIL_USER and EMAIL_PASS in .env", emailError);
       // In dev mode, we might still want to proceed so we can test the UI with the console.log output

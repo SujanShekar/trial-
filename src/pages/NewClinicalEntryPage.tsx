@@ -19,7 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { Case, ClinicalEntry } from '../types';
+import { Case, ClinicalEntry, StaffMember } from '../types';
 
 const NewClinicalEntryPage: React.FC = () => {
   const { caseId, logId } = useParams();
@@ -27,6 +27,9 @@ const NewClinicalEntryPage: React.FC = () => {
   const { medicines, addClinicalEntry, updateClinicalEntry, clinicalEntries, isLoading: isGlobalLoading } = useAppContext();
   const [targetCase, setTargetCase] = useState<Case | null>(null);
   const [isCaseLoading, setIsCaseLoading] = useState(true);
+  const [doctors, setDoctors] = useState<StaffMember[]>([]);
+  const [doctorSelection, setDoctorSelection] = useState('');
+  const [otherDoctorName, setOtherDoctorName] = useState('');
 
   const isEditMode = !!logId;
 
@@ -35,7 +38,7 @@ const NewClinicalEntryPage: React.FC = () => {
     symptoms: '',
     diagnosis: '',
     treatment: '',
-    doctorName: 'Dr. Anita Desai'
+    doctorName: ''
   });
 
   const [entry, setEntry] = useState(createInitialEntry());
@@ -55,6 +58,27 @@ const NewClinicalEntryPage: React.FC = () => {
       }
     }
   }, [isEditMode, logId, clinicalEntries]);
+
+  useEffect(() => {
+    apiFetch('/api/staff')
+      .then(async response => response.ok ? response.json() : Promise.reject(new Error('Unable to load staff')))
+      .then((members: StaffMember[]) => {
+        setDoctors(members.filter(member =>
+          [member.type, member.role].some(value => value?.toLowerCase().includes('doctor'))
+        ));
+      })
+      .catch(error => console.error('Unable to load doctors', error));
+  }, []);
+
+  useEffect(() => {
+    if (!entry.doctorName || doctors.length === 0) return;
+    if (doctors.some(doctor => doctor.name === entry.doctorName)) {
+      setDoctorSelection(entry.doctorName);
+    } else {
+      setDoctorSelection('__other__');
+      setOtherDoctorName(entry.doctorName);
+    }
+  }, [doctors, entry.doctorName]);
 
   useEffect(() => {
     const fetchCase = async () => {
@@ -227,13 +251,38 @@ const NewClinicalEntryPage: React.FC = () => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                   <User size={12} /> Attending Doctor
                 </label>
-                <input 
-                  type="text"
+                <select
                   required
                   className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:ring-4 focus:ring-[#005F54]/5 focus:border-[#005F54] focus:bg-white focus:outline-none transition-all text-sm font-bold text-black shadow-inner"
-                  value={entry.doctorName}
-                  onChange={e => handleUpdateEntry('doctorName', e.target.value)}
-                />
+                  value={doctorSelection}
+                  onChange={e => {
+                    const value = e.target.value;
+                    setDoctorSelection(value);
+                    if (value === '__other__') {
+                      setOtherDoctorName('');
+                      handleUpdateEntry('doctorName', '');
+                    } else {
+                      handleUpdateEntry('doctorName', value);
+                    }
+                  }}
+                >
+                  <option value="" disabled>Select a doctor</option>
+                  {doctors.map(doctor => <option key={doctor.id} value={doctor.name}>{doctor.name}</option>)}
+                  <option value="__other__">Other</option>
+                </select>
+                {doctorSelection === '__other__' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter attending doctor's name"
+                    className="w-full mt-3 px-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:ring-4 focus:ring-[#005F54]/5 focus:border-[#005F54] focus:bg-white focus:outline-none transition-all text-sm font-bold text-black shadow-inner"
+                    value={otherDoctorName}
+                    onChange={e => {
+                      setOtherDoctorName(e.target.value);
+                      handleUpdateEntry('doctorName', e.target.value);
+                    }}
+                  />
+                )}
               </div>
             </div>
 

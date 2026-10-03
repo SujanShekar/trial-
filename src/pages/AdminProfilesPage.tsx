@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Trash2, Edit3, X } from "lucide-react";
+import { Search, Trash2, Edit3, X, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 interface Profile {
@@ -28,6 +28,7 @@ const AdminProfilesPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("active");
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -84,6 +85,7 @@ const AdminProfilesPage: React.FC = () => {
     });
 
     setErrors({});
+    setShowPassword(false);
     setEditingProfile(null);
   };
 
@@ -343,25 +345,35 @@ const AdminProfilesPage: React.FC = () => {
           {/* PASSWORD */}
           {!editingProfile && (
             <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    password: e.target.value,
-                  });
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      password: e.target.value,
+                    });
 
-                  setErrors({
-                    ...errors,
-                    password: undefined,
-                  });
-                }}
-                className={`w-full p-4 rounded-2xl border ${
-                  errors.password ? "border-red-500" : "border-slate-200"
-                }`}
-              />
+                    setErrors({
+                      ...errors,
+                      password: undefined,
+                    });
+                  }}
+                  className={`w-full p-4 pr-12 rounded-2xl border ${
+                    errors.password ? "border-red-500" : "border-slate-200"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
 
               <p className="text-slate-400 text-xs mt-2">
                 Minimum 8 characters with uppercase, lowercase and number.

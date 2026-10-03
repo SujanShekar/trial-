@@ -488,7 +488,7 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<DashboardPage user={user} />} />
                     <Route path="/search" element={<SearchResultsPage />} />
-                    <Route path="/cases" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor']}><CasesPage user={user} /></RequireRole>} />
+                    <Route path="/cases" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor', 'Data Entry']}><CasesPage user={user} /></RequireRole>} />
                     <Route path="/wildlife" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor', 'Data Entry']}><WildlifePage /></RequireRole>} />
                     <Route
                       path="/housekeeping"
@@ -498,7 +498,7 @@ const App: React.FC = () => {
                       path="/declaration"
                       element={<RequireRole user={user} allowedRoles={['Admin', 'Data Entry']}><AnimalDeclarationPage /></RequireRole>}
                     />
-                    <Route path="/cases/new" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor']}><NewCasePage /></RequireRole>} />
+                    <Route path="/cases/new" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor', 'Data Entry']}><NewCasePage /></RequireRole>} />
                     <Route
                       path="/cases/:caseId/edit"
                       element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor']}><EditCasePage /></RequireRole>}
@@ -518,7 +518,7 @@ const App: React.FC = () => {
                     />
                     <Route
                       path="/inventory/new"
-                      element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor']}><NewMedicinePage /></RequireRole>}
+                      element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor', 'Data Entry']}><NewMedicinePage /></RequireRole>}
                     />
                     <Route path="/donations" element={<RequireRole user={user} allowedRoles={['Admin']}><DonationsPage /></RequireRole>} />
                     <Route path="/adoptions" element={<RequireRole user={user} allowedRoles={['Admin', 'Doctor']}><AdoptionsPage /></RequireRole>} />

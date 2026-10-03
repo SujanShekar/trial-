@@ -209,7 +209,7 @@ const WildlifePage: React.FC = () => {
   const [customAreaInput, setCustomAreaInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
+  const createInitialFormData = () => ({
     caseNumber: '',
     complainantName: '',
     phoneNumber: '',
@@ -225,6 +225,17 @@ const WildlifePage: React.FC = () => {
     resolvedDate: new Date().toISOString().split('T')[0],
     dateTime: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }),
   });
+  const [formData, setFormData] = useState(createInitialFormData);
+
+  const resetForm = () => {
+    setFormData(createInitialFormData());
+    setAreaSearch('');
+    setShowAreaSuggestions(false);
+    setIsCustomAreaMode(false);
+    setCustomAreaInput('');
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Handle outside clicks for area dropdown
   useEffect(() => {
@@ -356,8 +367,9 @@ const WildlifePage: React.FC = () => {
       createdAt: new Date().toISOString()
     };
 
-    addWildlifeCase(newTransfer);
+    await addWildlifeCase(newTransfer);
     alert("Case submitted successfully to the database.");
+    resetForm();
     setView('history');
   };
 
@@ -456,7 +468,14 @@ const WildlifePage: React.FC = () => {
         </div>
         
         <button 
-          onClick={() => setView(view === 'history' ? 'form' : 'history')}
+          onClick={() => {
+            if (view === 'history') {
+              resetForm();
+              setView('form');
+            } else {
+              setView('history');
+            }
+          }}
           className={`bg-[#005F54] p-6 rounded-[2rem] text-white shadow-xl shadow-emerald-900/10 flex items-center gap-6 min-w-[340px] transition-all duration-300 group hover:scale-[1.02] hover:ring-4 hover:ring-emerald-500/20 text-left border-2 ${view === 'history' ? 'border-white' : 'border-transparent'}`}
         >
           <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition-colors shadow-inner">

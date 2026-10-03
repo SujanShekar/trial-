@@ -10,6 +10,12 @@ const parseABCRecord = (body: any) => {
   if (data.animalId === '' || data.animalId === undefined || data.animalId === null) {
     data.animalId = null;
   }
+
+  if (data.animalType === '') {
+    data.animalType = null;
+  } else if (typeof data.animalType === 'string') {
+    data.animalType = data.animalType.trim();
+  }
   
   if (data.maleCount === '' || data.maleCount === undefined || data.maleCount === null) {
     data.maleCount = null;

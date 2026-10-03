@@ -65,7 +65,17 @@ router.get('/housekeeping', async (req, res) => {
 
 router.post('/housekeeping', async (req, res) => {
   try {
-    const item = await prisma.housekeepingSupply.create({ data: sanitizeData(req.body) });
+    const data = sanitizeData(req.body);
+    const name = typeof data.name === 'string' ? data.name.trim() : '';
+    const existingItem = await prisma.housekeepingSupply.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } }
+    });
+
+    if (existingItem) {
+      return res.status(409).json({ error: 'An item with this name already exists' });
+    }
+
+    const item = await prisma.housekeepingSupply.create({ data: { ...data, name } });
     res.status(201).json(item);
   } catch (error) {
     sendError(res, error, 'Failed to create housekeeping item');

@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../app';
 import { prismaMock } from './setup';
+import { issueAuthToken } from '../auth/token';
 
 describe('General API Endpoints', () => {
   it('should return health status', async () => {
@@ -47,6 +48,44 @@ describe('General API Endpoints', () => {
         location: 'South Delhi'
       }
     });
+  });
+
+  it('should allow Data Entry staff to create a case', async () => {
+    prismaMock.case.create.mockResolvedValue({ id: 'uuid-456', title: 'Injury Case' } as any);
+
+    const res = await request(app)
+      .post('/api/cases')
+      .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
+      .send({ title: 'Injury Case', description: 'Limping dog', location: 'South Delhi' });
+
+    expect(res.status).toBe(201);
+  });
+
+  it('should store an optional scene video URL when creating a case', async () => {
+    prismaMock.case.create.mockResolvedValue({ id: 'uuid-video', videoUrl: '/uploads/scene.mp4' } as any);
+
+    const res = await request(app)
+      .post('/api/cases')
+      .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
+      .send({ title: 'Injury Case', description: 'Limping dog', location: 'South Delhi', videoUrl: '/uploads/scene.mp4' });
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.case.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ videoUrl: '/uploads/scene.mp4' })
+    });
+  });
+
+  it('should filter exported cases by the requested range', async () => {
+    prismaMock.case.findMany.mockResolvedValue([] as any);
+
+    const res = await request(app)
+      .get('/api/cases/export?range=month')
+      .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Admin')}`);
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.case.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ createdAt: expect.objectContaining({ gte: expect.any(Date) }) })
+    }));
   });
 
   it('should sanitize data in animal update', async () => {

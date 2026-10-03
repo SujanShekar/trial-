@@ -62,9 +62,12 @@ const upload = multer({ storage });
 app.use('/api/auth', authRoutes);
 app.use('/api', requireAuth);
 app.use('/api/animals', requireRole(['Admin', 'Doctor']), animalRoutes);
-app.use('/api/cases', requireRole(['Admin', 'Doctor']), caseRoutes);
+app.use('/api/cases', requireRole(['Admin', 'Doctor', 'Data Entry']), caseRoutes);
 app.use('/api/wildlife', requireRole(['Admin', 'Doctor', 'Data Entry']), wildlifeRoutes);
-app.use('/api/staff', requireRole(['Admin']), staffRoutes);
+app.use('/api/staff', (req, res, next) =>
+  requireRole(req.method === 'GET' ? ['Admin', 'Doctor'] : ['Admin'])(req, res, next),
+  staffRoutes
+);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api', medicalRoutes);
 app.use('/api/donations', requireRole(['Admin']), donationRoutes);

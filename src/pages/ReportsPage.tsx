@@ -16,18 +16,19 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
   const { medicines, staff, abcRecords, donations, adoptions, isLoading } = useAppContext();
   const [reportCases, setReportCases] = React.useState<any[]>([]);
   const [isFetchingCases, setIsFetchingCases] = React.useState(false);
+  const [selectedRange, setSelectedRange] = React.useState<'week' | 'month' | 'year' | 'all'>('all');
   const [adoptionStats, setAdoptionStats] = React.useState<{ total: number; byMonth: Record<string, number>; byAnimalType: Record<string, number> }>({ total: 0, byMonth: {}, byAnimalType: {} });
 
   React.useEffect(() => {
     setIsFetchingCases(true);
-    apiFetch('/api/cases/export')
+    apiFetch(`/api/cases/export?range=${selectedRange}`)
       .then(res => res.json())
       .then(data => {
         setReportCases(data);
         setIsFetchingCases(false);
       })
       .catch(() => setIsFetchingCases(false));
-  }, []);
+  }, [selectedRange]);
 
   React.useEffect(() => {
     apiFetch('/api/adoptions/stats')
@@ -55,8 +56,21 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
     document.body.removeChild(link);
   };
 
+  const filterByRange = (data: any[], dateFor: (item: any) => string | undefined = item => item.createdAt) => {
+    if (selectedRange === 'all') return data;
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (selectedRange === 'week') start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    if (selectedRange === 'month') start.setDate(1);
+    if (selectedRange === 'year') start.setMonth(0, 1);
+    return data.filter(item => {
+      const value = dateFor(item);
+      return value && new Date(value) >= start;
+    });
+  };
+
   const exportDonations = () => {
-    const formattedDonations = donations.map(d => {
+    const formattedDonations = filterByRange(donations, d => d.date || d.createdAt).map(d => {
       const dDate = new Date(d.date || d.createdAt || Date.now());
       return {
         ...d,
@@ -69,11 +83,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
   };
 
   const handleExportAll = () => {
-    generateCSV(medicines, 'pfa_meds_stock');
-    generateCSV(staff, 'pfa_staff_volunteer_list');
-    generateCSV(abcRecords, 'pfa_abc_detailed_report');
+    generateCSV(filterByRange(medicines), 'pfa_meds_stock');
+    generateCSV(filterByRange(staff), 'pfa_staff_volunteer_list');
+    generateCSV(filterByRange(abcRecords, record => record.surgeryDate || record.createdAt), 'pfa_abc_detailed_report');
     exportDonations();
-    generateCSV(adoptions, 'pfa_adoption_annual_report');
+    generateCSV(filterByRange(adoptions), 'pfa_adoption_annual_report');
     
     const censusData = reportCases.filter(c => c.status === CaseStatus.RELEASED || c.status === CaseStatus.PERMANENT);
     generateCSV(censusData, 'pfa_census_report');
@@ -89,7 +103,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       icon: Pill, 
       color: 'bg-blue-50 text-blue-600',
       roles: ['Admin', 'Doctor'],
-      action: () => generateCSV(medicines, 'pfa_meds_stock')
+      action: () => generateCSV(filterByRange(medicines), 'pfa_meds_stock')
     },
     { 
       id: 'staff', 
@@ -98,7 +112,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       icon: Users, 
       color: 'bg-emerald-50 text-emerald-600',
       roles: ['Admin', 'Doctor'],
-      action: () => generateCSV(staff, 'pfa_staff_volunteer_list')
+      action: () => generateCSV(filterByRange(staff), 'pfa_staff_volunteer_list')
     },
     { 
       id: 'abc', 
@@ -107,7 +121,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       icon: Scissors, 
       color: 'bg-amber-50 text-amber-600',
       roles: ['Admin', 'Doctor'],
-      action: () => generateCSV(abcRecords, 'pfa_abc_detailed_report')
+      action: () => generateCSV(filterByRange(abcRecords, record => record.surgeryDate || record.createdAt), 'pfa_abc_detailed_report')
     },
     { 
       id: 'donations', 
@@ -125,7 +139,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       icon: Heart, 
       color: 'bg-rose-50 text-rose-600',
       roles: ['Admin'],
-      action: () => generateCSV(adoptions, 'pfa_adoption_annual_report')
+      action: () => generateCSV(filterByRange(adoptions), 'pfa_adoption_annual_report')
     },
     { 
       id: 'census', 
@@ -154,7 +168,18 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">Reports & Downloads</h1>
           <p className="text-slate-500 font-medium">Download lists and data files.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+           <select
+             aria-label="Export date range"
+             value={selectedRange}
+             onChange={event => setSelectedRange(event.target.value as typeof selectedRange)}
+             className="px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#005F54]/20"
+           >
+             <option value="week">This Week</option>
+             <option value="month">This Month</option>
+             <option value="year">This Year</option>
+             <option value="all">All Time</option>
+           </select>
            <button 
              onClick={handleExportAll}
              className="bg-[#005F54] text-white px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-[0.15em] shadow-xl shadow-emerald-900/20 hover:bg-[#004a42] transition-all flex items-center gap-3 active:scale-95"

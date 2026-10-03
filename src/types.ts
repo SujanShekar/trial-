@@ -50,6 +50,7 @@ export interface Case {
   status: CaseStatus | string;
   reportedById?: string; 
   imageUrl?: string;
+  videoUrl?: string;
   createdAt?: string;
 }
 
@@ -91,6 +92,7 @@ export interface WildlifeCase {
 export interface ABCRecord {
   id: string;
   animalId?: string;
+  animalType?: string;
   maleCount?: number;
   femaleCount?: number;
   area?: string;
@@ -206,6 +208,7 @@ export interface MedicineUsage {
 export interface StaffMember {
   id: string;
   name: string;
+  type?: string;
   role: string;
   phone: string;
   joinedDate: string;
