@@ -1,5 +1,9 @@
 import { apiFetch } from './api';
 
+/** Maps legacy public upload URLs to the API-served upload path. */
+export const getMediaUrl = (url?: string): string | undefined =>
+  url?.startsWith('/uploads/') ? `/api${url}` : url;
+
 /**
  * Uploads a file to the server and returns the URL.
  * @param file The file to upload

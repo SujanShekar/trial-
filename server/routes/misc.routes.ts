@@ -13,7 +13,7 @@ export default function createMiscRouter(upload: any) {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileUrl = `/api/uploads/${req.file.filename}`;
     res.json({ url: fileUrl });
   });
 

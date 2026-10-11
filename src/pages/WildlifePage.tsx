@@ -36,7 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import { MYSURU_AREAS as GLOBAL_MYSURU_AREAS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { WildlifeCase } from '../types';
-import { uploadFile, base64ToFile } from '../lib/storage';
+import { uploadFile, base64ToFile, getMediaUrl } from '../lib/storage';
 
 const TransferFormPreview = ({ transfer, onClose }: { transfer: any; onClose: () => void }) => {
   const handlePrint = () => {
@@ -129,7 +129,7 @@ const TransferFormPreview = ({ transfer, onClose }: { transfer: any; onClose: ()
                 <Camera size={14} /> Identification Photo
               </h3>
               <div className="w-full h-64 rounded-[2rem] overflow-hidden border-2 border-slate-100 shadow-inner">
-                <img src={transfer.imageUrl} alt="Animal" className="w-full h-full object-cover" />
+                <img src={getMediaUrl(transfer.imageUrl)} alt="Animal" className="w-full h-full object-cover" />
               </div>
             </div>
           )}

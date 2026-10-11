@@ -38,6 +38,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
+app.use('/api/uploads', express.static(uploadsDir));
 
 // Configure Multer
 const storage = multer.diskStorage({

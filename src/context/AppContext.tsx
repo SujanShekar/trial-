@@ -67,8 +67,8 @@ interface AppContextType {
   deleteMedicineUsage: (id: string) => void;
   deleteStaff: (id: string) => void;
   deleteAnimal: (id: string) => void;
-  deleteCase: (id: string) => void;
-  deleteClinicalEntry: (id: string) => void;
+  deleteCase: (id: string) => Promise<boolean>;
+  deleteClinicalEntry: (id: string) => Promise<boolean>;
   deleteDeclaration: (id: string) => void;
   addDonation: (donation: Donation) => void;
   addAdoption: (adoption: Adoption) => void;
@@ -295,12 +295,13 @@ export const AppProvider: React.FC<{
   };
 
   const deleteCase = async (id: string) => {
-    await handleRequest(
+    const result = await handleRequest(
       `/api/cases/${id}`,
       { method: "DELETE" },
       "Case removed",
       () => setCases((prev) => prev.filter((c) => c.id !== id)),
     );
+    return result !== null;
   };
 
   const addClinicalEntry = async (entry: ClinicalEntry) => {
@@ -334,12 +335,13 @@ export const AppProvider: React.FC<{
   };
 
   const deleteClinicalEntry = async (id: string) => {
-    await handleRequest(
+    const result = await handleRequest(
       `/api/clinical-entries/${id}`,
       { method: "DELETE" },
       "Entry removed",
       () => setClinicalEntries((prev) => prev.filter((c) => c.id !== id)),
     );
+    return result !== null;
   };
 
   const addWildlifeCase = async (newCase: WildlifeCase) => {

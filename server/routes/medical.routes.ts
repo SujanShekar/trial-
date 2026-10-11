@@ -27,7 +27,7 @@ router.post('/clinical-entries', async (req, res) => {
   }
 });
 
-router.delete('/clinical-entries/:id', async (req, res) => {
+router.delete('/clinical-entries/:id', requireRole(['Admin', 'Doctor']), async (req, res) => {
   try {
     await prisma.clinicalEntry.delete({ where: { id: req.params.id } });
     res.status(204).send();

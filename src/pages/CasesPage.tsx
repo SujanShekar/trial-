@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import { getMediaUrl } from '../lib/storage';
 import { 
   Search, 
   Plus, 
@@ -22,6 +23,7 @@ import {
   Calendar,
   Clock,
   ArrowRight,
+  ArrowLeft,
   Layout,
   PawPrint,
   FileText,
@@ -141,7 +143,7 @@ const CaseSheetPreview = ({ caseItem, clinicalEntries, onClose }: { caseItem: Ca
                 <Camera size={14} /> Identification Photo
               </h3>
               <div className="w-full max-w-md h-64 rounded-[2rem] overflow-hidden border-2 border-slate-100 shadow-inner">
-                <img src={caseItem.imageUrl} alt="Animal" className="w-full h-full object-cover" />
+                <img src={getMediaUrl(caseItem.imageUrl)} alt="Animal" className="w-full h-full object-cover" />
               </div>
             </div>
           )}
@@ -265,11 +267,10 @@ const DoctorDropdown = ({ value, onChange, placeholder, className = "" }: { valu
 
 // --- Specialized Image Component ---
 const SanctuaryImage = ({ src, alt, className, onClick }: { src?: string, alt?: string, className?: string, onClick?: () => void }) => {
-  const [status, setStatus] = useState<'loading' | 'error' | 'success'>(src ? 'loading' : 'error');
+  const [status, setStatus] = useState<'empty' | 'loading' | 'error' | 'success'>(src ? 'loading' : 'empty');
 
   useEffect(() => {
-    if (!src) setStatus('error');
-    else setStatus('loading');
+    setStatus(src ? 'loading' : 'empty');
   }, [src]);
 
   return (
@@ -292,7 +293,7 @@ const SanctuaryImage = ({ src, alt, className, onClick }: { src?: string, alt?: 
       )}
       {src && (
         <img 
-          src={src} 
+          src={getMediaUrl(src)}
           alt={alt || "Animal Image"} 
           className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${status === 'success' ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setStatus('success')}
@@ -326,7 +327,7 @@ interface CasesPageProps {
 const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { clinicalEntries, medicines, updateCase } = useAppContext();
+  const { clinicalEntries, medicines, updateCase, deleteCase, deleteClinicalEntry } = useAppContext();
   
   const [cases, setCases] = useState<Case[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -452,6 +453,28 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
         fetchCases();
       });
     }
+  };
+
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const canManageClinicalEntries = isAdmin || user?.role?.toUpperCase() === 'DOCTOR';
+
+  const handleDeleteCase = async (caseItem: Case) => {
+    if (!window.confirm('Delete this case and all its clinical history? This cannot be undone.')) return;
+    const deleted = await deleteCase(caseItem.id);
+    if (!deleted) return;
+
+    setSelectedCase(null);
+    setIsPreviewing(false);
+    if (cases.length === 1 && currentPage > 1) {
+      setCurrentPage(page => page - 1);
+    } else {
+      fetchCases();
+    }
+  };
+
+  const handleDeleteClinicalEntry = async (entry: ClinicalEntry) => {
+    if (!window.confirm('Delete this clinical history entry? This cannot be undone.')) return;
+    await deleteClinicalEntry(entry.id);
   };
 
   const resetFilters = () => {
@@ -580,7 +603,7 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                 <th className="px-10 py-6">Case Details</th>
                 <th className="px-10 py-6">Case ID</th>
                 <th className="px-10 py-6">Last Clinical Entry</th>
-                <th className="px-10 py-8 text-right">View</th>
+                <th className="px-10 py-8 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -640,16 +663,28 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                     </div>
                   </td>
                   <td className="px-10 py-8 text-right">
-                    <button
-  disabled={(user?.role?.toUpperCase() !== 'ADMIN' && user?.role?.toUpperCase() !== 'DOCTOR')}
-  className={`p-3 rounded-2xl transition-all shadow-sm ${
-    (user?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'DOCTOR')
-      ? 'bg-slate-50 text-slate-400 group-hover:bg-[#005F54] group-hover:text-white'
-      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-  }`}
->
-  <ArrowRight size={20} />
-</button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        disabled={!canManageClinicalEntries}
+                        className={`p-3 rounded-2xl transition-all shadow-sm ${
+                          canManageClinicalEntries
+                            ? 'bg-slate-50 text-slate-400 group-hover:bg-[#005F54] group-hover:text-white'
+                            : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                        }`}
+                      >
+                        <ArrowRight size={20} />
+                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          aria-label={`Delete ${c.title}`}
+                          onClick={(event) => { event.stopPropagation(); handleDeleteCase(c); }}
+                          className="p-3 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -671,6 +706,14 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
         {totalCount > PAGE_SIZE && (
           <div className="p-6 border-t border-slate-50 flex items-center justify-center gap-4">
             
+             <button
+               onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.max(1, prev - 1)); }}
+               disabled={currentPage === 1 || isPageLoading}
+               className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-[#005F54] transition-all disabled:opacity-30"
+               aria-label="Previous page"
+             >
+                <ArrowLeft size={16} />
+             </button>
              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {totalPages}</span>
              <button 
                onClick={(e) => { e.stopPropagation(); setCurrentPage(prev => Math.min(totalPages, prev + 1)); }}
@@ -768,6 +811,15 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
     Edit Registry Info
   </button>
 )}
+{isAdmin && (
+  <button
+    type="button"
+    onClick={() => handleDeleteCase(selectedCase)}
+    className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+  >
+    <Trash2 size={16} /> Delete Case
+  </button>
+)}
                 </div>
 
                 <button onClick={() => setSelectedCase(null)} className="p-3 hover:bg-rose-50 hover:text-rose-500 rounded-2xl text-slate-300 transition-all"><X size={24} /></button>
@@ -793,6 +845,11 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                        </div>
                     </div>
                  </div>
+                 {selectedCase.videoUrl && (
+                   <div className="bg-slate-50 p-4 rounded-[2rem] border border-slate-100">
+                     <video controls className="w-full max-h-64 rounded-2xl" src={getMediaUrl(selectedCase.videoUrl)} />
+                   </div>
+                 )}
                  <div className="bg-white border-2 border-slate-50 p-8 rounded-[2.5rem] shadow-sm space-y-4">
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                        <Info size={14} /> Case Description
@@ -858,6 +915,16 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                                >
                                  <Edit2 size={18} />
                                </button>
+                               {canManageClinicalEntries && (
+                                 <button
+                                   type="button"
+                                   aria-label={`Delete clinical entry from ${log.date}`}
+                                   onClick={(event) => { event.stopPropagation(); handleDeleteClinicalEntry(log); }}
+                                   className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
+                                 >
+                                   <Trash2 size={18} />
+                                 </button>
+                               )}
                             </td>
                           </tr>
                         ))
@@ -888,7 +955,7 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
       {expandedImage && (
         <div className="fixed inset-0 z-[120] bg-slate-950/90 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Full-size case image" onClick={() => setExpandedImage(null)}>
           <button aria-label="Close image" onClick={() => setExpandedImage(null)} className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20"><X size={24} /></button>
-          <img src={expandedImage.src} alt={expandedImage.alt} onClick={(event) => event.stopPropagation()} className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl" />
+          <img src={getMediaUrl(expandedImage.src)} alt={expandedImage.alt} onClick={(event) => event.stopPropagation()} className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl" />
         </div>
       )}
     </div>

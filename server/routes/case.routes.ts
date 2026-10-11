@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { sendError, sanitizeData } from '../utils';
+import { requireRole } from '../middleware/requireRole';
 
 const router = Router();
 // --- Cases with Pagination & Filtering ---
@@ -191,19 +192,15 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
-
-  // if (!isAdmin(req)) {
-  //   return res.status(403).json({
-  //     error: 'Access denied. Admins only.'
-  //   });
-  // }
-
+router.delete('/:id', requireRole(['Admin']), async (req, res) => {
   try {
-    await prisma.case.delete({ where: { id: req.params.id } });
+    await prisma.$transaction([
+      prisma.clinicalEntry.deleteMany({ where: { caseId: req.params.id } }),
+      prisma.case.delete({ where: { id: req.params.id } }),
+    ]);
     res.status(204).send();
   } catch (error) {
-    sendError(res, error, 'Failed to delete case');
+    sendError(res, error, 'Unable to delete this case and its clinical history');
   }
 });
 
