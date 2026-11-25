@@ -251,7 +251,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="responsive-table w-full text-left">
             <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest print:bg-white print:border-b-2 print:border-slate-800">
               <tr>
                 <th className="px-10 py-5">Donor Name</th>

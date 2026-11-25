@@ -17,6 +17,7 @@ jest.mock('../context/AppContext', () => ({
 
 const mockCase = {
   id: 'case-123',
+  caseNumber: 'CASE-TEST',
   title: 'Dog Rescue - CASE-TEST',
   location: 'Hebbal, Street 5',
   description: 'Injured limb',
@@ -44,6 +45,7 @@ const renderEditCase = (caseId = 'case-123') => {
 describe('EditCasePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUpdateCase.mockResolvedValue({ ...mockCase });
     window.alert = jest.fn();
     fetchMock.resetMocks();
     

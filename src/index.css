@@ -9,6 +9,25 @@ body {
   background-color: #f8fafc;
 }
 
+/* Phone-first safeguards. Individual data tables opt into card mode with
+   .responsive-table; desktop markup is preserved from the md breakpoint. */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px; }
+  button, a[role="button"] { min-height: 44px; }
+  .responsive-table thead { display: none; }
+  .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display: block; width: 100%; }
+  .responsive-table tr { margin: .75rem; width: auto; border: 1px solid #e2e8f0; border-radius: 1rem; padding: .75rem; background: white; }
+  .responsive-table td { padding: .45rem .25rem !important; border: 0 !important; white-space: normal !important; }
+  .responsive-table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: .15rem; color: #64748b; font-size: .65rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .responsive-table td:empty { display: none; }
+  .mobile-stack { flex-direction: column; align-items: stretch; }
+  .mobile-scroll-tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

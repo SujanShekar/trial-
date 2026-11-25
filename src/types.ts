@@ -44,6 +44,7 @@ export enum CaseStatus {
 
 export interface Case {
   id: string;
+  caseNumber: string;
   title: string;
   description: string;
   location: string;
@@ -51,6 +52,13 @@ export interface Case {
   reportedById?: string; 
   imageUrl?: string;
   videoUrl?: string;
+  noseVideoUrl?: string;
+  bodyVideoUrl?: string;
+  biometricStatus?: 'none' | 'pending' | 'processing' | 'enrolled' | 'failed';
+  biometricMetadata?: Record<string, unknown>;
+  biometricError?: string;
+  biometricAttempts?: number;
+  biometricUpdatedAt?: string;
   createdAt?: string;
 }
 

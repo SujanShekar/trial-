@@ -9,6 +9,8 @@
     "start": "cross-env NODE_ENV=production tsx server.ts",
     "lint": "tsc --noEmit",
     "test": "cross-env NODE_ENV=test jest",
+    "backfill:case-numbers": "tsx prisma/backfill-case-numbers.ts",
+    "mock:biometrics": "tsx scripts/mock-biometric-service.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

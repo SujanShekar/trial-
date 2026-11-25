@@ -48,8 +48,8 @@ interface AppContextType {
   // Actions
   addAnimal: (animal: Animal) => void;
   updateAnimal: (animal: Animal) => void;
-  addCase: (newCase: Case) => void;
-  updateCase: (updatedCase: Case) => Promise<void>;
+  addCase: (newCase: Case) => Promise<Case | null>;
+  updateCase: (updatedCase: Case) => Promise<Case | null>;
   addClinicalEntry: (entry: ClinicalEntry) => void;
   updateClinicalEntry: (entry: ClinicalEntry) => void;
   addWildlifeCase: (newCase: WildlifeCase) => void;
@@ -199,6 +199,7 @@ export const AppProvider: React.FC<{
       options: RequestInit,
       successMessage?: string,
       onSuccess?: (data: any) => void,
+      suppressErrorNotification = false,
     ) => {
       try {
         const response = await apiFetch(apiPath, options);
@@ -211,7 +212,7 @@ export const AppProvider: React.FC<{
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          notify(data.error || "Operation failed", "error");
+          if (!suppressErrorNotification) notify(data.error || "Operation failed", "error");
           return null;
         }
 
@@ -221,7 +222,7 @@ export const AppProvider: React.FC<{
         if (onSuccess) onSuccess(data);
         return data;
       } catch (err) {
-        notify("Network error. Check your connection.", "error");
+        if (!suppressErrorNotification) notify("Network error. Check your connection.", "error");
         console.error(err);
         return null;
       }
@@ -268,7 +269,7 @@ export const AppProvider: React.FC<{
 
   const addCase = async (newCase: Case) => {
     const { id, ...data } = newCase;
-    await handleRequest(
+    return await handleRequest(
       "/api/cases",
       {
         method: "POST",
@@ -277,11 +278,12 @@ export const AppProvider: React.FC<{
       },
       "Case created",
       (saved) => setCases((prev) => [saved, ...prev]),
-    );
+      true,
+    ) as Case | null;
   };
 
   const updateCase = async (updatedCase: Case) => {
-    await handleRequest(
+    return await handleRequest(
       `/api/cases/${updatedCase.id}`,
       {
         method: "PATCH",
@@ -291,7 +293,8 @@ export const AppProvider: React.FC<{
       "Case updated",
       (saved) =>
         setCases((prev) => prev.map((c) => (c.id === saved.id ? saved : c))),
-    );
+      true,
+    ) as Case | null;
   };
 
   const deleteCase = async (id: string) => {

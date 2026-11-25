@@ -92,7 +92,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=2043";
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#EBFDFA]">
+    <div className="min-h-dvh w-full flex flex-col md:flex-row bg-[#EBFDFA]">
       {/* Left Side */}
       <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
         <div

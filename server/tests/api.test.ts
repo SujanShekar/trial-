@@ -4,6 +4,7 @@ import { prismaMock } from './setup';
 import { issueAuthToken } from '../auth/token';
 
 describe('General API Endpoints', () => {
+  const caseAuth = `Bearer ${issueAuthToken('user-1', 'Data Entry')}`;
   it('should return health status', async () => {
     const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
@@ -13,6 +14,7 @@ describe('General API Endpoints', () => {
   it('should sanitize data in case creation', async () => {
     // Problematic payload with relational and immutable fields
     const payload = {
+      caseNumber: 'PFA-2026-001',
       title: 'Injury Case',
       description: 'Limping dog',
       location: 'South Delhi',
@@ -36,6 +38,7 @@ describe('General API Endpoints', () => {
 
     const res = await request(app)
       .post('/api/cases')
+      .set('Authorization', caseAuth)
       .send(payload);
 
     expect(res.status).toBe(201);
@@ -43,6 +46,7 @@ describe('General API Endpoints', () => {
     // Check that prisma.case.create was called with SANITIZED data
     expect(prismaMock.case.create).toHaveBeenCalledWith({
       data: {
+        caseNumber: 'PFA-2026-001',
         title: 'Injury Case',
         description: 'Limping dog',
         location: 'South Delhi'
@@ -51,23 +55,23 @@ describe('General API Endpoints', () => {
   });
 
   it('should allow Data Entry staff to create a case', async () => {
-    prismaMock.case.create.mockResolvedValue({ id: 'uuid-456', title: 'Injury Case' } as any);
+    prismaMock.case.create.mockResolvedValue({ id: 'uuid-456', caseNumber: 'PFA-2026-002', title: 'Injury Case' } as any);
 
     const res = await request(app)
       .post('/api/cases')
       .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
-      .send({ title: 'Injury Case', description: 'Limping dog', location: 'South Delhi' });
+      .send({ caseNumber: 'PFA-2026-002', title: 'Injury Case', description: 'Limping dog', location: 'South Delhi' });
 
     expect(res.status).toBe(201);
   });
 
   it('should store an optional scene video URL when creating a case', async () => {
-    prismaMock.case.create.mockResolvedValue({ id: 'uuid-video', videoUrl: '/uploads/scene.mp4' } as any);
+    prismaMock.case.create.mockResolvedValue({ id: 'uuid-video', caseNumber: 'PFA-2026-003', videoUrl: '/uploads/scene.mp4' } as any);
 
     const res = await request(app)
       .post('/api/cases')
       .set('Authorization', `Bearer ${issueAuthToken('user-1', 'Data Entry')}`)
-      .send({ title: 'Injury Case', description: 'Limping dog', location: 'South Delhi', videoUrl: '/uploads/scene.mp4' });
+      .send({ caseNumber: 'PFA-2026-003', title: 'Injury Case', description: 'Limping dog', location: 'South Delhi', videoUrl: '/uploads/scene.mp4' });
 
     expect(res.status).toBe(201);
     expect(prismaMock.case.create).toHaveBeenCalledWith({

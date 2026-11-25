@@ -20,6 +20,7 @@ import {
   Search
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { findDuplicate } from '../lib/uniqueness';
 import { AdoptionApplication } from '../types';
 
 const UnderlineInput = ({ label, value, onChange, placeholder, width = "full", type = "text", disabled = false }: any) => {
@@ -225,6 +226,8 @@ const AdoptionsPage: React.FC = () => {
   });
 
   const handleFinalize = () => {
+  const duplicate = findDuplicate(formData.appNumber, adoptionApplications.map(application => application.appNumber));
+  if (duplicate) { alert(`Similar item exists: ${duplicate}`); return; }
   const requiredFields = [
     formData.adopterName,
     formData.adopterAge,
@@ -443,7 +446,7 @@ if (!emailRegex.test(formData.email)) {
 
             <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="responsive-table w-full text-left">
                   <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
                     <tr>
                       <th className="px-10 py-6">Name</th>

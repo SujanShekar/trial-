@@ -28,6 +28,7 @@ const EditCasePage: React.FC = () => {
   const [targetCase, setTargetCase] = useState<Case | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [caseNumberError, setCaseNumberError] = useState('');
 
   const [formData, setFormData] = useState({
     caseNumber: '',
@@ -54,7 +55,7 @@ const EditCasePage: React.FC = () => {
         if (foundCase && !foundCase.error) {
           setTargetCase(foundCase);
           const titleParts = foundCase.title.split(' - ');
-          const caseNumber = titleParts[1] || '';
+          const caseNumber = foundCase.caseNumber || titleParts[1] || '';
           const animalTypeRaw = titleParts[0]?.split(' ')[0] || 'Dog';
           
           setFormData({
@@ -118,6 +119,7 @@ const EditCasePage: React.FC = () => {
 
       const updatedCase: Case = {
         ...targetCase,
+        caseNumber: formData.caseNumber.trim(),
         title: `${finalAnimalType} Rescue - ${formData.caseNumber}`,
         location: formData.location,
         description: formData.description,
@@ -125,7 +127,11 @@ const EditCasePage: React.FC = () => {
         imageUrl: finalImageUrl,
       };
 
-      updateCase(updatedCase);
+      const savedCase = await updateCase(updatedCase);
+      if (!savedCase) {
+        setCaseNumberError('Case number already exists. Please choose a different number.');
+        return;
+      }
       alert(`Case ${formData.caseNumber} has been updated.`);
       navigate('/cases', { state: { openCaseId: caseId } });
     }
@@ -183,8 +189,9 @@ const EditCasePage: React.FC = () => {
                   placeholder="Enter Case ID..."
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-500/5 focus:border-amber-500 focus:outline-none transition-all text-sm font-bold text-black"
                   value={formData.caseNumber}
-                  onChange={e => setFormData({...formData, caseNumber: e.target.value})}
+                  onChange={e => { setFormData({...formData, caseNumber: e.target.value}); setCaseNumberError(''); }}
                 />
+                {caseNumberError && <p className="mt-2 text-xs font-bold text-rose-600">{caseNumberError}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Status</label>

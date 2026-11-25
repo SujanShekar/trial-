@@ -63,6 +63,7 @@ interface SidebarLinkProps {
   icon: any;
   label: string;
   collapsed: boolean;
+  onNavigate?: () => void;
 }
 
 const RequireRole: React.FC<{ user: User; allowedRoles: User['role'][]; children: React.ReactElement }> = ({ user, allowedRoles, children }) => {
@@ -74,6 +75,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   icon: Icon,
   label,
   collapsed,
+  onNavigate,
 }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -81,6 +83,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   return (
     <Link
       to={to}
+      onClick={onNavigate}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
         isActive
           ? "bg-[#005F54] text-white shadow-md"
@@ -93,12 +96,55 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   );
 };
 
+const navigationItems = [
+  { to: "/", icon: LayoutDashboard, label: "Home", roles: ["Admin", "Doctor", "Data Entry"] },
+  { to: "/cases", icon: BriefcaseMedical, label: "Rescues", roles: ["Admin", "Doctor"] },
+  { to: "/declaration", icon: FileSignature, label: "Declaration Form", roles: ["Admin", "Data Entry"] },
+  { to: "/inventory", icon: Pill, label: "Medicines", roles: ["Admin", "Doctor", "Data Entry"] },
+  { to: "/housekeeping", icon: Sparkles, label: "Housekeeping", roles: ["Admin", "Data Entry"] },
+  { to: "/staff", icon: Users, label: "Staff List", roles: ["Admin"] },
+  { to: "/wildlife", icon: Bird, label: "Wildlife", roles: ["Admin", "Doctor", "Data Entry"] },
+  { to: "/abc", icon: Dna, label: "Birth Control", roles: ["Admin", "Doctor", "Data Entry"] },
+  { to: "/donations", icon: HandHeart, label: "Donations", roles: ["Admin"] },
+  { to: "/adoptions", icon: PawPrint, label: "Adoptions", roles: ["Admin", "Doctor"] },
+  { to: "/analytics", icon: BarChart3, label: "Reports", roles: ["Admin", "Doctor"] },
+  { to: "/history-logs", icon: History, label: "History", roles: ["Admin"] },
+  { to: "/admin", icon: UserLock, label: "Admin", roles: ["Admin"] },
+];
+
+const NavigationLinks: React.FC<{ user: User; collapsed?: boolean; onNavigate?: () => void }> = ({ user, collapsed = false, onNavigate }) => (
+  <>{navigationItems.filter(item => item.roles.includes(user.role)).map(item => (
+    <SidebarLink key={item.to} {...item} collapsed={collapsed} onNavigate={onNavigate} />
+  ))}</>
+);
+
+export const MobileDrawer: React.FC<{ user: User; open: boolean; onClose: () => void; onLogout: () => void }> = ({ user, open, onClose, onLogout }) => {
+  const location = useLocation();
+  useEffect(() => onClose(), [location.pathname]);
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [onClose]);
+  if (!open) return null;
+  return <div className="fixed inset-0 z-[100] md:hidden" role="presentation">
+    <button aria-label="Close navigation" className="absolute inset-0 w-full bg-slate-900/45 backdrop-blur-sm" onClick={onClose} />
+    <aside className="relative flex h-dvh w-[min(85vw,320px)] flex-col bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="Navigation menu">
+      <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4"><div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#005F54] font-bold text-white">P</span><span className="font-bold text-slate-800">PFA Portal</span></div><button aria-label="Close navigation" onClick={onClose} className="min-h-11 min-w-11 p-2 text-slate-600"><X /></button></div>
+      <div className="border-b border-slate-100 px-4 py-4"><p className="font-bold text-slate-800">{user.fullName}</p><p className="mt-1 text-xs font-black uppercase tracking-wider text-[#005F54]">{user.role}</p><button onClick={() => { window.dispatchEvent(new Event('pfa-open-profile')); onClose(); }} className="mt-2 min-h-11 text-sm font-semibold text-slate-500">My Profile</button></div>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4"><NavigationLinks user={user} onNavigate={onClose} /></nav>
+      <div className="border-t border-slate-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"><button onClick={onLogout} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-4 py-3 text-red-600 hover:bg-red-50"><LogOut size={20} /><span className="font-medium">Sign Out</span></button></div>
+    </aside>
+  </div>;
+};
+
 const AppHeader: React.FC<{
   user: User;
   onLogout: () => void;
   onMenuClick: () => void;
+  menuOpen: boolean;
   onUserUpdated: (user: User) => void;
-}> = ({ user, onLogout, onMenuClick, onUserUpdated }) => {
+}> = ({ user, onLogout, onMenuClick, menuOpen, onUserUpdated }) => {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const { lowStockMedicines } = useAppContext();
@@ -108,6 +154,7 @@ const AppHeader: React.FC<{
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const openProfile = () => {
     setProfileForm({ fullName: user.fullName, phone: user.phone || "", currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -115,6 +162,11 @@ const AppHeader: React.FC<{
     setProfileError("");
     setIsProfileOpen(true);
   };
+
+  useEffect(() => {
+    window.addEventListener('pfa-open-profile', openProfile);
+    return () => window.removeEventListener('pfa-open-profile', openProfile);
+  });
 
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -164,17 +216,21 @@ const AppHeader: React.FC<{
     if (searchValue.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchValue.trim())}`);
       setSearchValue("");
+      setIsMobileSearchOpen(false);
     }
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 z-10">
+    <header className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 z-10">
       <button
-        className="md:hidden p-2 -ml-2 text-slate-600"
+        aria-label="Open navigation"
+        aria-expanded={menuOpen}
+        className="md:hidden min-h-11 min-w-11 p-2 -ml-2 text-slate-600"
         onClick={onMenuClick}
       >
         <Menu size={24} />
       </button>
+      <p className="sm:hidden min-w-0 flex-1 truncate px-2 text-sm font-black text-slate-800">PFA Portal</p>
       <form
         onSubmit={handleSearch}
         className="hidden sm:flex items-center bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 w-1/3 group focus-within:ring-2 focus-within:ring-[#005F54]/20 focus-within:border-[#005F54] transition-all"
@@ -192,6 +248,7 @@ const AppHeader: React.FC<{
         />
       </form>
       <div className="flex items-center gap-2 md:gap-4">
+        <button aria-label="Search" onClick={() => setIsMobileSearchOpen(true)} className="sm:hidden min-h-11 min-w-11 p-2 text-slate-600"><Search size={20} /></button>
         <div className="relative">
           <button
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
@@ -290,6 +347,7 @@ const AppHeader: React.FC<{
           </button>
         </div>
       </div>
+      {isMobileSearchOpen && <form onSubmit={handleSearch} className="absolute inset-x-0 top-0 z-30 flex h-16 items-center gap-2 bg-white px-4 sm:hidden"><button type="button" aria-label="Close search" onClick={() => setIsMobileSearchOpen(false)} className="min-h-11 min-w-11 text-slate-600"><X /></button><input autoFocus value={searchValue} onChange={(e) => setSearchValue(e.target.value)} placeholder="Search cases, animals, wildlife" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-base outline-none focus:ring-2 focus:ring-[#005F54]/20" /><button aria-label="Submit search" className="min-h-11 min-w-11 text-[#005F54]"><Search /></button></form>}
       {isProfileOpen && createPortal(
         <div className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" role="presentation" onMouseDown={() => setIsProfileOpen(false)}>
           <form onSubmit={saveProfile} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl space-y-5" role="dialog" aria-modal="true" aria-labelledby="profile-title">
@@ -343,7 +401,7 @@ const App: React.FC = () => {
     localStorage.setItem("pfa_user_session", JSON.stringify(updatedUser));
   };
 
-  const allNavigation = [
+  /*const allNavigation = [
     {
       to: "/",
       icon: LayoutDashboard,
@@ -397,15 +455,16 @@ const App: React.FC = () => {
     },
     { to: "/history-logs", icon: History, label: "History", roles: ["Admin"] },
     { to: "/admin", icon: UserLock, label: "Admin", roles: ["Admin"] },
-  ];
+  ];*/
 
-  const navigation = allNavigation.filter((item) =>
-    item.roles.includes(user?.role || ""),
-  );
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobileMenuOpen]);
 
   if (isAuthLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#005F54]"></div>
       </div>
     );
@@ -425,7 +484,7 @@ const App: React.FC = () => {
               }} />} />
             </Routes>
           ) : (
-            <div className="flex h-screen overflow-hidden bg-[#F1F5F9]">
+            <div className="flex min-h-dvh overflow-hidden bg-[#F1F5F9]">
               <aside
                 className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-20 ${
                   collapsed ? "w-20" : "w-64"
@@ -450,15 +509,7 @@ const App: React.FC = () => {
                   </button>
                 </div>
                 <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
-                  {navigation.map((item) => (
-                    <SidebarLink
-                      key={item.to}
-                      to={item.to}
-                      icon={item.icon}
-                      label={item.label}
-                      collapsed={collapsed}
-                    />
-                  ))}
+                  <NavigationLinks user={user} collapsed={collapsed} />
                 </nav>
                 <div className="p-4 border-t border-gray-100">
                   <button
@@ -476,11 +527,14 @@ const App: React.FC = () => {
                 </div>
               </aside>
 
+              <MobileDrawer user={user} open={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} onLogout={handleLogout} />
+
               <main className="flex-1 flex flex-col overflow-hidden">
                 <AppHeader
                   user={user}
                   onLogout={handleLogout}
                   onMenuClick={() => setIsMobileMenuOpen(true)}
+                  menuOpen={isMobileMenuOpen}
                   onUserUpdated={handleUserUpdated}
                 />
 

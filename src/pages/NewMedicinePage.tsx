@@ -12,11 +12,12 @@ import {
   Calendar
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { findDuplicate } from '../lib/uniqueness';
 import { Medicine } from '../types';
 
 const NewMedicinePage: React.FC = () => {
   const navigate = useNavigate();
-  const { addMedicine } = useAppContext();
+  const { addMedicine, medicines } = useAppContext();
   const [formData, setFormData] = useState({
     name: '',
     category: 'Antibiotics',
@@ -42,6 +43,8 @@ const NewMedicinePage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const duplicate = findDuplicate(formData.name, medicines.map(medicine => medicine.name));
+    if (duplicate) { alert(`Similar item exists: ${duplicate}`); return; }
     
     const finalCategory = formData.category === 'Others' ? (formData.customCategory || 'Others') : formData.category;
 
@@ -100,6 +103,7 @@ const NewMedicinePage: React.FC = () => {
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
               />
+              {findDuplicate(formData.name, medicines.map(medicine => medicine.name)) && <p className="text-xs text-amber-600 font-bold">Similar item exists: {findDuplicate(formData.name, medicines.map(medicine => medicine.name))}</p>}
             </div>
 
             <div className="space-y-2">

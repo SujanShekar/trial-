@@ -206,7 +206,7 @@ const ABCPage: React.FC = () => {
 
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="responsive-table w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">
                   <tr>
                     <th className="px-10 py-6">Animal / Area</th>

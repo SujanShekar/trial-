@@ -63,6 +63,9 @@ export default function createMiscRouter(upload: any) {
         prisma.case.findMany({
           where: {
             OR: [
+              { caseNumber: { equals: query, mode: 'insensitive' } },
+              { caseNumber: { startsWith: query, mode: 'insensitive' } },
+              { caseNumber: { contains: query, mode: 'insensitive' } },
               { title: { contains: query, mode: 'insensitive' } },
               { description: { contains: query, mode: 'insensitive' } },
               { location: { contains: query, mode: 'insensitive' } },
@@ -92,6 +95,15 @@ export default function createMiscRouter(upload: any) {
           take: 10,
         }),
       ]);
+
+      const normalizedQuery = query.toLocaleLowerCase();
+      cases.sort((left, right) => {
+        const rank = (caseNumber?: string) => {
+          const value = caseNumber?.toLocaleLowerCase() || '';
+          return value === normalizedQuery ? 0 : value.startsWith(normalizedQuery) ? 1 : 2;
+        };
+        return rank(left.caseNumber) - rank(right.caseNumber);
+      });
 
       res.json({ cases, wildlife, animals });
     } catch (error) {

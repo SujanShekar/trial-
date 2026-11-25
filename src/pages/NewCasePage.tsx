@@ -24,6 +24,7 @@ import { useAppContext } from '../context/AppContext';
 import { MYSURU_AREAS as GLOBAL_MYSURU_AREAS } from '../constants';
 import { Case, CaseStatus } from '../types';
 import { uploadFile, base64ToFile } from '../lib/storage';
+import { apiFetch } from '../lib/api';
 
 const NewCasePage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const NewCasePage: React.FC = () => {
   const [customAreaInput, setCustomAreaInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [caseNumberError, setCaseNumberError] = useState('');
   
   // Helper to get formatted current time matching INITIAL_CASES format (24h)
   const getFormattedNow = () => {
@@ -69,6 +71,15 @@ const NewCasePage: React.FC = () => {
     description: '',
     caseReason: 'Treatment'
   });
+
+  useEffect(() => {
+    apiFetch('/api/cases/next-number')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.caseNumber) setFormData(prev => prev.caseNumber ? prev : { ...prev, caseNumber: data.caseNumber });
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Handle outside clicks to close area dropdown
   useEffect(() => {
@@ -292,6 +303,7 @@ const isFormValid =
 
   const newCase: Case = {
     id: Math.random().toString(36).substr(2, 9),
+    caseNumber: trimmedCaseNumber,
     title: `${finalAnimalType} Rescue - ${trimmedCaseNumber}`,
     location: combinedLocation,
     description: `Age: ${formData.age}
@@ -309,7 +321,11 @@ Reporter Address: ${trimmedCompAddress}`,
     createdAt: new Date().toISOString()
   };
 
-  addCase(newCase);
+  const savedCase = await addCase(newCase);
+  if (!savedCase) {
+    setCaseNumberError('Case number already exists. Please choose a different number.');
+    return;
+  }
 
   alert(`Case ${trimmedCaseNumber} has been successfully registered.`);
   navigate('/cases');
@@ -427,8 +443,9 @@ Reporter Address: ${trimmedCompAddress}`,
                   placeholder="Enter Case ID..."
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#005F54]/5 focus:border-[#005F54] focus:outline-none transition-all text-sm font-bold text-black placeholder:text-slate-300"
                   value={formData.caseNumber}
-                  onChange={e => setFormData({...formData, caseNumber: e.target.value})}
+                  onChange={e => { setFormData({...formData, caseNumber: e.target.value}); setCaseNumberError(''); }}
                 />
+                {caseNumberError && <p className="mt-2 text-xs font-bold text-rose-600">{caseNumberError}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date & Time</label>
@@ -709,6 +726,7 @@ Reporter Address: ${trimmedCompAddress}`,
               required
                 type="file" 
                 accept="image/*" 
+                capture="environment"
                 className="hidden" 
                 ref={fileInputRef} 
                 onChange={handleImageChange} 

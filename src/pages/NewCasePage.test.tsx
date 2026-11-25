@@ -35,6 +35,7 @@ const renderNewCase = () => {
 describe('NewCasePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAddCase.mockResolvedValue({ id: 'saved-case' });
     window.alert = jest.fn();
     localStorage.setItem('pfa_user_session', JSON.stringify({ id: 'user-1', role: 'Admin' }));
   });

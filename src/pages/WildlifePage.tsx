@@ -37,6 +37,7 @@ import { MYSURU_AREAS as GLOBAL_MYSURU_AREAS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { WildlifeCase } from '../types';
 import { uploadFile, base64ToFile, getMediaUrl } from '../lib/storage';
+import { findDuplicate } from '../lib/uniqueness';
 
 const TransferFormPreview = ({ transfer, onClose }: { transfer: any; onClose: () => void }) => {
   const handlePrint = () => {
@@ -319,6 +320,8 @@ const WildlifePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const duplicate = findDuplicate(formData.caseNumber, wildlifeCases.map(caseItem => caseItem.caseNumber));
+    if (duplicate) { alert(`Similar item exists: ${duplicate}`); return; }
     if (formData.phoneNumber.length !== 10) {
       alert("Reporter phone number must be exactly 10 digits.");
       return;
@@ -515,6 +518,7 @@ const WildlifePage: React.FC = () => {
               <div className="space-y-3">
                 <label className="text-xs font-black text-slate-800 ml-1 uppercase tracking-widest">Case Number *</label>
                 <input required type="text" placeholder="e.g., 2025001" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-black focus:ring-4 focus:ring-[#005F54]/5 focus:border-[#005F54] focus:outline-none transition-all placeholder:text-slate-300" value={formData.caseNumber} onChange={e => setFormData({...formData, caseNumber: e.target.value})} />
+                {findDuplicate(formData.caseNumber, wildlifeCases.map(caseItem => caseItem.caseNumber)) && <p className="mt-2 text-xs font-bold text-amber-600">Similar item exists: {findDuplicate(formData.caseNumber, wildlifeCases.map(caseItem => caseItem.caseNumber))}</p>}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -765,7 +769,7 @@ const WildlifePage: React.FC = () => {
 
           <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
              <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[1000px]">
+                <table className="responsive-table w-full text-left md:min-w-[1000px]">
                   <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] border-b border-slate-100">
                     <tr>
                       <th className="px-8 py-6">Transfer Identity</th>

@@ -83,7 +83,7 @@ const CaseSheetPreview = ({ caseItem, clinicalEntries, onClose }: { caseItem: Ca
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Case Registry #</p>
-              <p className="text-2xl font-black text-[#005F54]">{caseItem.id.slice(0, 8).toUpperCase()}</p>
+              <p className="text-2xl font-black text-[#005F54]">{caseItem.caseNumber}</p>
             </div>
           </div>
 
@@ -597,7 +597,7 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
       {/* Main Records Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="responsive-table w-full text-left">
             <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
               <tr>
                 <th className="px-10 py-6">Case Details</th>
@@ -631,7 +631,7 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                     </div>
                   </td>
                   <td className="px-10 py-8">
-                    <span className="inline-block px-3 py-1 bg-[#005F54] text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{c.id.slice(0, 8).toUpperCase()}</span>
+                    <span className="inline-block px-3 py-1 bg-[#005F54] text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{c.caseNumber}</span>
                   </td>
                   <td className="px-10 py-8">
                     <div className="flex flex-col">
@@ -876,7 +876,7 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                 </div>
 
                 <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-                  <table className="w-full text-left">
+                  <table className="responsive-table w-full text-left">
                     <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       <tr>
                         <th className="px-10 py-5 w-[20%]">Date</th>

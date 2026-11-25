@@ -2,15 +2,15 @@
 import { Animal, Case, Medicine, Donation, ABCRecord, WildlifeCase, HousekeepingSupply, MedicineUsage, AdoptionApplication, StaffMember, Declaration } from '../types';
 
 export const INITIAL_STAFF: StaffMember[] = [
-  { 
-    id: '1', 
+  {
+    id: '1',
     name: 'Dr. Anita Desai', 
     phone: '9876543210', 
     role: 'Senior Vet', 
     joinedDate: '2023-01-10',
   },
-  { 
-    id: '2', 
+  {
+    id: '2',
     name: 'Prateek Yadav', 
     phone: '9876543211', 
     role: 'Rescue Lead', 
@@ -48,6 +48,7 @@ export const INITIAL_ANIMALS: Animal[] = [
 export const INITIAL_CASES: Case[] = [
   {
     id: '1',
+    caseNumber: 'PFA-2026-001',
     title: 'Golden Retriever Rescue',
     description: 'Golden Retriever, limping on front left leg, possibly a hairline fracture.',
     location: 'Central Park, Delhi',
@@ -56,6 +57,7 @@ export const INITIAL_CASES: Case[] = [
   },
   {
     id: '2',
+    caseNumber: 'PFA-2026-002',
     title: 'Calico Cat Recovery',
     description: 'Calico cat found with severe dehydration and skin infection.',
     location: 'Sector 15, Rohini',

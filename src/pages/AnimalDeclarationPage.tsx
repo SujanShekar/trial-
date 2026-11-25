@@ -463,7 +463,7 @@ formData.signature.trim() !== '' &&
 
            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="responsive-table w-full text-left">
                    <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
                       <tr>
                         <th className="px-10 py-6">Form No</th>

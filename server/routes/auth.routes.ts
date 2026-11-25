@@ -22,7 +22,11 @@ const transporter = nodemailer.createTransport({
 
 router.post('/register', async (req, res) => {
   try {
-    const { fullName, email, phone, role, password } = req.body;
+    const { fullName, phone, role, password } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } })) {
+      return res.status(409).json({ error: 'Email already exists', success: false });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: { 
@@ -36,7 +40,7 @@ router.post('/register', async (req, res) => {
     const { password: _, ...userWithoutPassword } = user;
     res.status(201).json(userWithoutPassword);
   } catch (error: any) {
-    if (error.code === 'P2002') return res.status(400).json({ error: 'Email already exists', success: false });
+    if (error.code === 'P2002') return res.status(409).json({ error: 'Email already exists', success: false });
     sendError(res, error, 'Registration failed');
   }
 });

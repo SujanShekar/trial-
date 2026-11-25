@@ -126,6 +126,8 @@ const StaffPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const duplicatePhone = staff.find(member => member.id !== selectedStaff?.id && member.phone.replace(/\D/g, '') === formData.phone.replace(/\D/g, ''));
+    if (duplicatePhone) { alert(`A staff member with phone number ${duplicatePhone.phone} already exists.`); return; }
     
     if (formData.phone.length < 10) {
       alert("Phone number must be at least 10 digits.");

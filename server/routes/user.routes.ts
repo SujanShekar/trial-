@@ -78,7 +78,8 @@ router.get("/", async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { fullName, email, password, phone, role } = req.body;
+    const { fullName, password, phone, role } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
 
     // Basic validation
     if (!fullName || !email || !password || !role) {
@@ -88,11 +89,7 @@ router.post("/", async (req, res) => {
     }
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    const existingUser = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
 
     if (existingUser) {
       return res.status(409).json({
@@ -123,7 +120,8 @@ router.post("/", async (req, res) => {
     });
 
     res.status(201).json(user);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'A user with this email already exists' });
     sendError(res, error, "Failed to create user");
   }
 });
@@ -152,12 +150,8 @@ router.put("/:id", async (req, res) => {
     }
 
     // Check email uniqueness if email is being changed
-    if (email && email !== existingUser.email) {
-      const emailExists = await prisma.user.findUnique({
-        where: {
-          email,
-        },
-      });
+    if (email && email.toLowerCase() !== existingUser.email.toLowerCase()) {
+      const emailExists = await prisma.user.findFirst({ where: { email: { equals: String(email).trim(), mode: 'insensitive' }, NOT: { id } } });
 
       if (emailExists) {
         return res.status(409).json({
@@ -179,7 +173,7 @@ router.put("/:id", async (req, res) => {
     }
 
     if (email !== undefined) {
-      updateData.email = email;
+      updateData.email = String(email).trim().toLowerCase();
     }
 
     if (phone !== undefined) {
@@ -210,7 +204,8 @@ router.put("/:id", async (req, res) => {
     });
 
     res.json(updatedUser);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'A user with this email already exists' });
     sendError(res, error, "Failed to update user");
   }
 });

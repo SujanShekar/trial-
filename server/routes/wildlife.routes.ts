@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { sendError } from '../utils';
+import { findDuplicate } from '../lib/uniqueness';
 
 const router = Router();
 
@@ -29,8 +30,13 @@ router.post('/', async (req, res) => {
       });
     }
 
+    const caseNumber = String(req.body.caseNumber).trim();
+    const existing = await prisma.wildlifeCase.findMany({ select: { caseNumber: true } });
+    const duplicate = findDuplicate(caseNumber, (existing || []).map(item => item.caseNumber));
+    if (duplicate) return res.status(409).json({ error: `Case number already exists: '${duplicate.match}'.` });
+
     const data = {
-      caseNumber: String(req.body.caseNumber).trim(),
+      caseNumber,
       dateTime: String(req.body.dateTime).trim(),
       animal: String(req.body.animal).trim(),
       species: String(req.body.species).trim(),

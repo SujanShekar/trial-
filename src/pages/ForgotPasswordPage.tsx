@@ -152,7 +152,7 @@ const ForgotPasswordPage: React.FC = () => {
   const leftSideImageUrl = "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=2069";
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#EBFDFA]">
+    <div className="min-h-dvh w-full flex flex-col md:flex-row bg-[#EBFDFA]">
       {/* Left Side: Visuals */}
       <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
         <div 

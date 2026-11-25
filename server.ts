@@ -2,6 +2,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import express from 'express';
 import app from './server/app';
+import { recoverBiometricQueue } from './server/services/biometricQueue';
 
 async function startServer() {
   const PORT = 8082;
@@ -24,6 +25,7 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[${new Date().toISOString()}] Server running on http://localhost:${PORT}`);
     console.log(`[${new Date().toISOString()}] Port: ${PORT}, Mode: ${process.env.NODE_ENV || 'development'}`);
+    void recoverBiometricQueue();
   });
 }
 

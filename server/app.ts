@@ -20,6 +20,7 @@ import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
 import abcRecordRoutes from './routes/abc-record.routes';
 import createMiscRouter from './routes/misc.routes';
+import biometricRoutes from './routes/biometrics.routes';
 import { requireAuth } from './middleware/requireAuth';
 import { requireRole } from './middleware/requireRole';
 
@@ -57,7 +58,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 300 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/')) });
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
@@ -77,6 +78,7 @@ app.use('/api/declarations', requireRole(['Admin', 'Data Entry']), declarationRo
 app.use('/api/abc-records', requireRole(['Admin', 'Doctor', 'Data Entry']), abcRecordRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', requireRole(['Admin']), adminRoutes);
+app.use('/api/biometrics', biometricRoutes);
 app.use('/api', createMiscRouter(upload));
 
 export default app;

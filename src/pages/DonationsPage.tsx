@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Donation } from '../types';
 import { useAppContext } from '../context/AppContext';
+import { findDuplicate } from '../lib/uniqueness';
 
 type TimeFilter = 'All' | 'Weekly' | 'Monthly' | 'Yearly';
 
@@ -120,6 +121,8 @@ const DonationsPage: React.FC = () => {
 
   const handleNewDonationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const duplicate = findDuplicate(newEntry.paymentId, donations.flatMap(donation => donation.paymentId ? [donation.paymentId] : []));
+    if (duplicate) { alert(`Similar item exists: ${duplicate}`); return; }
     const amount = Number(newEntry.amount);
     if (!Number.isFinite(amount) || amount < 1 || amount > 10_000_000) {
       alert("Donation amount must be between ₹1 and ₹1,00,00,000.");
@@ -348,6 +351,7 @@ const DonationsPage: React.FC = () => {
                     onChange={e => setNewEntry({...newEntry, paymentId: e.target.value})} 
                     placeholder="e.g. TXN123456"
                   />
+                  {newEntry.paymentId && findDuplicate(newEntry.paymentId, donations.flatMap(donation => donation.paymentId ? [donation.paymentId] : [])) && <p className="text-xs font-bold text-amber-600">Similar item exists: {findDuplicate(newEntry.paymentId, donations.flatMap(donation => donation.paymentId ? [donation.paymentId] : []))}</p>}
                 </div>
               </div>
 
@@ -434,7 +438,7 @@ const DonationsPage: React.FC = () => {
                </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="responsive-table w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] print:bg-white print:border-b-2 print:border-slate-800">
                   <tr>
                     <th className="px-8 py-5">Entry ID</th>

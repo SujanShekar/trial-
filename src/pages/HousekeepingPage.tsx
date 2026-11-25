@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { HousekeepingSupply } from '../types';
+import { findDuplicate } from '../lib/uniqueness';
 
 const HousekeepingPage: React.FC = () => {
   const { housekeepingSupplies, addHousekeepingSupply, updateHousekeepingSupply, deleteHousekeepingSupply, isLoading } = useAppContext();
@@ -100,10 +101,10 @@ const HousekeepingPage: React.FC = () => {
     e.preventDefault();
     if (modalMode === 'add') {
       const name = currentSupply.name?.trim() || '';
-      const existingSupply = housekeepingSupplies.find(s => s.name.trim().toLowerCase() === name.toLowerCase());
+      const existingSupply = findDuplicate(name, housekeepingSupplies.map(supply => supply.name));
       
       if (existingSupply) {
-        alert('An item with this name already exists');
+        alert(`Similar item exists: ${existingSupply}`);
         return;
       } else {
         const newItem: HousekeepingSupply = {
@@ -205,7 +206,7 @@ const HousekeepingPage: React.FC = () => {
       {/* Inventory Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm animate-in slide-in-from-bottom-4 duration-500">
          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="responsive-table w-full text-left">
                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <tr>
                     <th className="px-8 py-6">Item Description</th>
@@ -390,6 +391,7 @@ const HousekeepingPage: React.FC = () => {
                   placeholder="e.g. White Phenyl"
                   autoComplete="off"
                 />
+                {currentSupply.name && findDuplicate(currentSupply.name, housekeepingSupplies.map(supply => supply.name)) && <p className="text-xs text-amber-600 font-bold">Similar item exists: {findDuplicate(currentSupply.name, housekeepingSupplies.map(supply => supply.name))}</p>}
                 <datalist id="supply-names-list">
                   {uniqueSupplyNames.map(name => (
                     <option key={name} value={name} />

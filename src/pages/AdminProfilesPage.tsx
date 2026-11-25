@@ -485,7 +485,7 @@ const AdminProfilesPage: React.FC = () => {
 
       {/* TABLE */}
       <div className="bg-white rounded-3xl border overflow-hidden">
-        <table className="w-full">
+        <table className="responsive-table w-full">
           <thead className="bg-slate-50">
             <tr>
               <th className="p-5 text-left">Name</th>

@@ -119,7 +119,7 @@ const SearchResultsPage: React.FC = () => {
                         {c.title.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-black text-slate-800 tracking-tight">#{c.id.slice(0,8).toUpperCase()} • {c.title}</p>
+                        <p className="font-black text-slate-800 tracking-tight">#{c.caseNumber} • {c.title}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                             <MapPin size={10} /> {c.location || 'General'}

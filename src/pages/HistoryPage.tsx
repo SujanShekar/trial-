@@ -157,7 +157,7 @@ const HistoryPage: React.FC = () => {
              </div>
              <label className="group relative cursor-pointer bg-[#005F54] hover:bg-[#004a42] text-white px-12 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-emerald-900/20 transition-all active:scale-95 flex items-center gap-3">
                 <Upload size={20} />
-                Choose Media (Image/Video)
+                Choose file / Take photo
                 <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
              </label>
           </div>

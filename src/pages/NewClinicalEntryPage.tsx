@@ -161,11 +161,13 @@ const NewClinicalEntryPage: React.FC = () => {
         const medicine = medicines.find(med => med.id === m.id);
         if (medicine) {
           addMedicineUsage({
+            id: `usage-${Date.now()}-${m.id}`,
             medicineId: m.id,
             medicineName: medicine.name,
-            quantity: m.quantity,
+            quantity: String(m.quantity),
             takenBy: entry.doctorName,
-            purpose: `Treatment for ${targetCase.title} (#${targetCase.id.toUpperCase()})`,
+            dateTime: entry.date,
+            purpose: `Treatment for ${targetCase.title} (#${targetCase.caseNumber})`,
             ward: targetCase.location || 'Clinic'
           });
         }
@@ -202,7 +204,7 @@ const NewClinicalEntryPage: React.FC = () => {
         </button>
         <div>
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">{isEditMode ? 'Edit Treatments' : 'Add Treatments'}</h1>
-          <p className="text-slate-500 font-medium">{isEditMode ? 'Update' : 'Add'} medicines given to {targetCase.id.slice(0, 8).toUpperCase()}</p>
+          <p className="text-slate-500 font-medium">{isEditMode ? 'Update' : 'Add'} medicines given to {targetCase.caseNumber}</p>
         </div>
       </div>
 
@@ -214,7 +216,7 @@ const NewClinicalEntryPage: React.FC = () => {
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Case</p>
-              <h3 className="text-xl font-black tracking-tight">{targetCase.id.slice(0, 8).toUpperCase()} • {targetCase.title}</h3>
+              <h3 className="text-xl font-black tracking-tight">{targetCase.caseNumber} • {targetCase.title}</h3>
             </div>
           </div>
           <div className="text-right hidden sm:block">

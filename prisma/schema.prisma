@@ -65,6 +65,7 @@ model Animal {
 
 model Case {
   id          String     @id @default(uuid())
+  caseNumber  String     @unique @map("case_number")
   title       String
   description String
   location    String
@@ -72,12 +73,20 @@ model Case {
   reportedById String?   @map("reported_by")
   imageUrl    String?    @map("image_url")
   videoUrl    String?    @map("video_url")
+  noseVideoUrl String?    @map("nose_video_url")
+  bodyVideoUrl String?    @map("body_video_url")
+  biometricStatus String  @default("none") @map("biometric_status")
+  biometricMetadata Json? @map("biometric_metadata")
+  biometricError String?  @map("biometric_error")
+  biometricAttempts Int   @default(0) @map("biometric_attempts")
+  biometricUpdatedAt DateTime? @map("biometric_updated_at")
   createdAt   DateTime   @default(now()) @map("created_at")
 
   reporter    User?      @relation("ReportedBy", fields: [reportedById], references: [id])
   clinicalEntries ClinicalEntry[]
 
   @@map("cases")
+  @@index([biometricStatus])
 }
 
 model ClinicalEntry {

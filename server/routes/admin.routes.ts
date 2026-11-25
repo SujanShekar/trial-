@@ -22,28 +22,31 @@ router.get('/profiles/:id', async (req, res) => {
 
 router.post('/profiles', async (req, res) => {
   try {
-    const { fullName, email, password, phone, role } = req.body;
+    const { fullName, password, phone, role } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
     if (!fullName || !email || !password || !role) return res.status(400).json({ error: 'Full name, email, password and role are required' });
-    if (await prisma.user.findUnique({ where: { email } })) return res.status(409).json({ error: 'Email already exists' });
+    if (await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } })) return res.status(409).json({ error: 'Email already exists' });
 
     const user = await prisma.user.create({
       data: { fullName, email, phone: phone || null, role, password: await bcrypt.hash(password, 12) },
       select: profileSelect,
     });
     res.status(201).json(user);
-  } catch (error) { sendError(res, error, 'Failed to create profile'); }
+  } catch (error: any) { if (error?.code === 'P2002') return res.status(409).json({ error: 'Email already exists' }); sendError(res, error, 'Failed to create profile'); }
 });
 
 router.put('/profiles/:id', async (req, res) => {
   try {
     const target = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!target) return res.status(404).json({ error: 'Profile not found' });
-    const { fullName, email, phone, role } = req.body;
+    const { fullName, phone, role } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' }, NOT: { id: req.params.id } } })) return res.status(409).json({ error: 'Email already exists' });
     const user = await prisma.user.update({
       where: { id: req.params.id }, data: { fullName, email, phone: phone || null, role }, select: profileSelect,
     });
     res.json(user);
-  } catch (error) { sendError(res, error, 'Failed to update profile'); }
+  } catch (error: any) { if (error?.code === 'P2002') return res.status(409).json({ error: 'Email already exists' }); sendError(res, error, 'Failed to update profile'); }
 });
 
 router.patch('/profiles/:id/reactivate', async (req, res) => {

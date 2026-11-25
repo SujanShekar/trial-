@@ -22,6 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { findDuplicate } from '../lib/uniqueness';
 import { User as UserType, Medicine, MedicineUsage } from '../types';
 
 interface InventoryPageProps {
@@ -117,6 +118,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ user }) => {
   const filteredMeds = useMemo(() => {
     return medicines.filter(med => {
       const matchesSearch = med.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            findDuplicate(searchTerm, [med.name]) === med.name ||
                             med.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || med.category === selectedCategory;
       const matchesLowStock = !showOnlyLowStock || med.quantity <= med.minStockLevel;
@@ -304,7 +306,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ user }) => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="responsive-table w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
                   <tr>
                     <th className="px-10 py-6">Medicine Info</th>
@@ -527,7 +529,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ user }) => {
 
           <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[1000px]">
+              <table className="responsive-table w-full text-left md:min-w-[1000px]">
                 <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] border-b border-slate-100">
                   <tr>
                     <th className="px-10 py-6">Date Used</th>

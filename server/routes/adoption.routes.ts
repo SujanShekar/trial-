@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { sendError, sanitizeData } from '../utils';
+import { findDuplicate } from '../lib/uniqueness';
 
 const router = Router();
 
@@ -11,25 +12,37 @@ router.get('/applications', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json(apps);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'Application number already exists.' });
     sendError(res, error, 'Failed to fetch applications');
   }
 });
 
 router.post('/applications', async (req, res) => {
   try {
-    const appRecord = await prisma.adoptionApplication.create({ data: sanitizeData(req.body) });
+    const data = sanitizeData(req.body);
+    const existing = await prisma.adoptionApplication.findMany({ select: { id: true, appNumber: true } });
+    const duplicate = findDuplicate(String(data.appNumber || ''), existing.map(item => item.appNumber));
+    if (duplicate) return res.status(409).json({ error: `Application number already exists: '${duplicate.match}'.` });
+    const appRecord = await prisma.adoptionApplication.create({ data });
     res.status(201).json(appRecord);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'Application number already exists.' });
     sendError(res, error, 'Failed to create adoption application');
   }
 });
 
 router.patch('/applications/:id', async (req, res) => {
   try {
+    const data = sanitizeData(req.body);
+    if (data.appNumber !== undefined) {
+      const existing = await prisma.adoptionApplication.findMany({ select: { id: true, appNumber: true } });
+      const duplicate = findDuplicate(String(data.appNumber), existing.filter(item => item.id !== req.params.id).map(item => item.appNumber));
+      if (duplicate) return res.status(409).json({ error: `Application number already exists: '${duplicate.match}'.` });
+    }
     const appRecord = await prisma.adoptionApplication.update({
       where: { id: req.params.id },
-      data: sanitizeData(req.body),
+      data,
     });
     res.json(appRecord);
   } catch (error) {

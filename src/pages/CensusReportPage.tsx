@@ -51,7 +51,7 @@ const CensusReportPage: React.FC = () => {
     const term = searchTerm.toLowerCase();
     return base.filter(c => 
       c.title.toLowerCase().includes(term) || 
-      c.id.toLowerCase().includes(term) ||
+      c.caseNumber?.toLowerCase().includes(term) ||
       c.location.toLowerCase().includes(term)
     );
   }, [activeTab, censusData, searchTerm]);
@@ -164,7 +164,7 @@ const CensusReportPage: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="responsive-table w-full text-left">
             <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
               <tr>
                 <th className="px-10 py-5">Record Entry</th>
@@ -180,11 +180,11 @@ const CensusReportPage: React.FC = () => {
                   <td className="px-10 py-6">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-sm ${activeTab === 'Permanent' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                        {c.id.slice(0, 3).toUpperCase()}
+                        {c.caseNumber}
                       </div>
                       <div>
                         <p className="text-sm font-black text-slate-800">{c.title}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registry ID: {c.id}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registry ID: {c.caseNumber}</p>
                       </div>
                     </div>
                   </td>

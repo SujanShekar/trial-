@@ -83,6 +83,7 @@ async function main() {
     data: [
       {
         id: '1',
+        caseNumber: 'PFA-2026-001',
         title: 'Golden Retriever Rescue',
         description: 'Golden Retriever, limping on front left leg, possibly a hairline fracture.',
         location: 'Central Park, Delhi',
@@ -91,6 +92,7 @@ async function main() {
       },
       {
         id: '2',
+        caseNumber: 'PFA-2026-002',
         title: 'Calico Cat Recovery',
         description: 'Calico cat found with severe dehydration and skin infection.',
         location: 'Sector 15, Rohini',

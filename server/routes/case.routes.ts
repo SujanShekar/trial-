@@ -2,6 +2,14 @@ import { Router } from 'express';
 import { prisma } from '../db';
 import { sendError, sanitizeData } from '../utils';
 import { requireRole } from '../middleware/requireRole';
+import { findDuplicate } from '../lib/uniqueness';
+import { enqueue } from '../services/biometricQueue';
+import { deleteDogBiometrics } from '../services/biometrics';
+
+const stripBiometricFields = (data: any) => {
+  const { biometricStatus, biometricMetadata, biometricError, biometricAttempts, biometricUpdatedAt, ...safe } = data;
+  return safe;
+};
 
 const router = Router();
 // --- Cases with Pagination & Filtering ---
@@ -21,6 +29,7 @@ router.get('/', async (req, res) => {
 
     if (search) {
       where.OR = [
+        { caseNumber: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
         { location: { contains: search, mode: 'insensitive' } },
@@ -132,6 +141,24 @@ router.get('/export', async (req, res) => {
   }
 });
 
+// This must remain above /:id, otherwise "next-number" is interpreted as an id.
+router.get('/next-number', async (_req, res) => {
+  try {
+    const year = new Date().getFullYear();
+    const prefix = `PFA-${year}-`;
+    const cases = await prisma.case.findMany({
+      where: { caseNumber: { startsWith: prefix, mode: 'insensitive' } },
+      select: { caseNumber: true },
+    });
+    const used = new Set(cases.map(item => item.caseNumber?.toUpperCase()));
+    let sequence = 1;
+    while (used.has(`${prefix}${String(sequence).padStart(3, '0')}`)) sequence += 1;
+    res.json({ caseNumber: `${prefix}${String(sequence).padStart(3, '0')}` });
+  } catch (error) {
+    sendError(res, error, 'Failed to suggest a case number');
+  }
+});
+
 router.get('/:id', async (req, res) => {
 
   // if (!isAdmin(req)) {
@@ -156,18 +183,29 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { videoUrl, ...caseData } = sanitizeData(req.body);
+    const { videoUrl, noseVideoUrl, bodyVideoUrl, caseNumber, ...caseData } = stripBiometricFields(sanitizeData(req.body));
+    if (typeof caseNumber !== 'string' || !caseNumber.trim()) {
+      return res.status(400).json({ error: 'Case number is required' });
+    }
+    const trimmedCaseNumber = caseNumber.trim();
+    const existing = await prisma.case.findMany({ select: { id: true, caseNumber: true } });
+    const duplicate = findDuplicate(trimmedCaseNumber, (existing ?? []).flatMap(item => item.caseNumber ? [item.caseNumber] : []));
+    if (duplicate) return res.status(409).json({ error: 'Case number already exists' });
 
     const newCase = await prisma.case.create({
       data: {
         ...caseData,
+        caseNumber: trimmedCaseNumber,
         ...(typeof videoUrl === 'string' && videoUrl ? { videoUrl } : {})
+        ,...(typeof noseVideoUrl === 'string' && noseVideoUrl ? { noseVideoUrl } : {})
+        ,...(typeof bodyVideoUrl === 'string' && bodyVideoUrl ? { bodyVideoUrl } : {})
       }
     });
-
+    if (noseVideoUrl || bodyVideoUrl) { void enqueue(newCase.id); }
     res.status(201).json(newCase);
 
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'Case number already exists' });
     console.error(error);
     sendError(res, error, 'Failed to create case');
   }
@@ -182,12 +220,25 @@ router.patch('/:id', async (req, res) => {
   // }
 
   try {
+    const data = stripBiometricFields(sanitizeData(req.body));
+    const biometricVideoChanged = data.noseVideoUrl !== undefined || data.bodyVideoUrl !== undefined;
+    if (data.caseNumber !== undefined) {
+      if (typeof data.caseNumber !== 'string' || !data.caseNumber.trim()) {
+        return res.status(400).json({ error: 'Case number is required' });
+      }
+      data.caseNumber = data.caseNumber.trim();
+      const existing = await prisma.case.findMany({ select: { id: true, caseNumber: true } });
+      const duplicate = findDuplicate(data.caseNumber, (existing ?? []).filter(item => item.id !== req.params.id).flatMap(item => item.caseNumber ? [item.caseNumber] : []));
+      if (duplicate) return res.status(409).json({ error: 'Case number already exists' });
+    }
     const updatedCase = await prisma.case.update({
       where: { id: req.params.id },
-      data: sanitizeData(req.body)
+      data
     });
+    if (biometricVideoChanged) void enqueue(updatedCase.id);
     res.json(updatedCase);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') return res.status(409).json({ error: 'Case number already exists' });
     sendError(res, error, 'Failed to update case');
   }
 });
@@ -198,6 +249,7 @@ router.delete('/:id', requireRole(['Admin']), async (req, res) => {
       prisma.clinicalEntry.deleteMany({ where: { caseId: req.params.id } }),
       prisma.case.delete({ where: { id: req.params.id } }),
     ]);
+    void deleteDogBiometrics(req.params.id);
     res.status(204).send();
   } catch (error) {
     sendError(res, error, 'Unable to delete this case and its clinical history');
