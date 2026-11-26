@@ -39,6 +39,8 @@ const AdminProfilesPage: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+  const [biometrics, setBiometrics] = useState<{ enabled: boolean; serviceUp: boolean; counts: Record<string, number> } | null>(null);
+  const [biometricMessage, setBiometricMessage] = useState('');
 
   const fetchProfiles = async () => {
     try {
@@ -60,7 +62,18 @@ const AdminProfilesPage: React.FC = () => {
 
   useEffect(() => {
     fetchProfiles();
+    apiFetch('/api/biometrics/status').then(async response => {
+      if (!response.ok) throw new Error(response.status === 503 ? 'Biometric service is unavailable.' : 'Unable to load biometric status.');
+      setBiometrics(await response.json());
+    }).catch(error => setBiometricMessage(error.message));
   }, []);
+
+  const reEnroll = async () => {
+    if (!window.confirm('Re-enroll all existing cases with biometric videos?')) return;
+    const response = await apiFetch('/api/biometrics/re-enroll-all', { method: 'POST' });
+    const data = await response.json().catch(() => ({}));
+    setBiometricMessage(response.ok ? `${data.queued || 0} cases queued for enrollment.` : data.error || 'Unable to queue enrollment.');
+  };
 
   const filteredProfiles = useMemo(() => {
     const query = search.toLowerCase();
@@ -268,6 +281,14 @@ const AdminProfilesPage: React.FC = () => {
           <h2 className="text-3xl font-black">{profiles.length}</h2>
         </div>
       </div>
+
+      <section className="rounded-3xl border bg-white p-5 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><h2 className="text-lg font-black">Biometric service</h2><p className="text-sm text-slate-500">{biometricMessage || (!biometrics ? 'Checking service…' : !biometrics.enabled ? 'Biometric enrollment is disabled.' : biometrics.serviceUp ? 'Service is online.' : 'Service is unavailable.')}</p></div>
+          <button type="button" disabled={!biometrics?.enabled} onClick={reEnroll} className="min-h-11 rounded-xl bg-[#005F54] px-4 py-3 text-xs font-black uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-50">Re-enroll all existing cases</button>
+        </div>
+        {biometrics && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">{['none','pending','processing','enrolled','failed'].map(status => <div key={status} className="rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase text-slate-500">{status}</p><p className="text-xl font-black">{biometrics.counts[status] || 0}</p></div>)}</div>}
+      </section>
 
       {/* FORM */}
       {loadError && <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl font-medium">Unable to load profiles: {loadError}</div>}
@@ -499,13 +520,13 @@ const AdminProfilesPage: React.FC = () => {
           <tbody>
             {filteredProfiles.map((profile) => (
               <tr key={profile.id} className="border-t">
-                <td className="p-5 font-bold">{profile.fullName}</td>
+                <td data-label="Name" className="p-5 font-bold">{profile.fullName}</td>
 
-                <td className="p-5">{profile.email}</td>
+                <td data-label="Email" className="p-5">{profile.email}</td>
 
-                <td className="p-5">{profile.phone || "-"}</td>
+                <td data-label="Phone" className="p-5">{profile.phone || "-"}</td>
 
-                <td className="p-5">
+                <td data-label="Role" className="p-5">
                   <div className="flex items-center gap-2">
                     <span>{profile.role}</span>
                     {profile.isRootAdmin && <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-1 rounded-full">ROOT</span>}

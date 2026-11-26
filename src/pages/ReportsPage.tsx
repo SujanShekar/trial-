@@ -263,7 +263,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
             <tbody className="divide-y divide-slate-50 print:divide-slate-200">
               {donations.slice(0, 10).map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-10 py-6">
+                  <td data-label="Report" className="px-10 py-6">
                      <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
                           {(row.donorName || 'D').charAt(0)}
@@ -274,10 +274,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
                         </div>
                      </div>
                   </td>
-                  <td className="px-10 py-6">
+                  <td data-label="Type" className="px-10 py-6">
                      <span className="text-[9px] font-black px-2.5 py-1 bg-white border border-slate-200 text-slate-500 rounded-md uppercase tracking-widest">{row.paymentId || 'Direct'}</span>
                   </td>
-                  <td className="px-10 py-6">
+                  <td data-label="Date" className="px-10 py-6">
                      <span className="text-xs font-bold text-slate-500">{new Date(row.createdAt || Date.now()).toLocaleDateString('en-GB')}</span>
                   </td>
                   <td className="px-10 py-6 text-right">

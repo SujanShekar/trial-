@@ -453,18 +453,18 @@ const DonationsPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-50 print:divide-slate-200">
                   {filteredDonations.map((row) => (
                     <tr key={row.id} className="hover:bg-emerald-50/5 transition-colors print:hover:bg-transparent">
-                      <td className="px-8 py-6 text-xs font-mono text-slate-400">#{row.id}</td>
-                      <td className="px-8 py-6">
+                      <td data-label="ID" className="px-8 py-6 text-xs font-mono text-slate-400">#{row.id}</td>
+                      <td data-label="Donor" className="px-8 py-6">
                         <span className="text-sm font-black text-slate-800">{row.donorName}</span>
                       </td>
-                      <td className="px-8 py-6">
+                      <td data-label="Message" className="px-8 py-6">
                         <span className="text-xs font-bold text-slate-600">{row.paymentId || 'N/A'}</span>
                       </td>
-                      <td className="px-8 py-6">
+                      <td data-label="Payment ID" className="px-8 py-6">
                         <span className="text-xs font-medium text-slate-500 line-clamp-1 max-w-[150px]">{row.message || '-'}</span>
                       </td>
-                      <td className="px-8 py-6 font-black text-slate-900 text-sm tracking-tighter">₹ {row.amount.toLocaleString('en-IN')}</td>
-                      <td className="px-8 py-6 text-xs font-bold text-slate-500">{row.date || new Date(row.createdAt || '').toLocaleDateString('en-GB')}</td>
+                      <td data-label="Amount" className="px-8 py-6 font-black text-slate-900 text-sm tracking-tighter">₹ {row.amount.toLocaleString('en-IN')}</td>
+                      <td data-label="Date" className="px-8 py-6 text-xs font-bold text-slate-500">{row.date || new Date(row.createdAt || '').toLocaleDateString('en-GB')}</td>
                       <td className="px-8 py-6 text-right no-print">
                         <div className="flex justify-end gap-2">
                           <button

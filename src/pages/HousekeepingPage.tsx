@@ -222,7 +222,7 @@ const HousekeepingPage: React.FC = () => {
                     
                     return (
                       <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-6">
+                        <td data-label="Item" className="px-8 py-6">
                            <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs group-hover:bg-[#005F54] group-hover:text-white transition-colors">
                                 {(s.name || '?').charAt(0)}
@@ -232,7 +232,7 @@ const HousekeepingPage: React.FC = () => {
                               </div>
                            </div>
                         </td>
-                        <td className="px-8 py-6">
+                        <td data-label="Quantity" className="px-8 py-6">
                            <div className="flex items-center gap-3 w-fit bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                               {/* MINUS SECTION */}
                               {adjusting?.id === s.id && adjusting.mode === 'sub' ? (
@@ -310,7 +310,7 @@ const HousekeepingPage: React.FC = () => {
                              </p>
                            )}
                         </td>
-                        <td className="px-8 py-6">
+                        <td data-label="Item" className="px-8 py-6">
                            <div className="flex items-center gap-4">
                               <div className="w-32 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                                  <div 

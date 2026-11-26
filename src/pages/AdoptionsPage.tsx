@@ -455,7 +455,7 @@ if (!emailRegex.test(formData.email)) {
                   <tbody className="divide-y divide-slate-50">
                     {filteredRecords.map((r) => (
                       <tr key={r.id} className="hover:bg-emerald-50/10 transition-colors group">
-                        <td className="px-10 py-7">
+                        <td data-label="Name" className="px-10 py-7">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[10px] font-black uppercase shadow-lg">
                               {(r.adopterName || '?').charAt(0)}
@@ -466,13 +466,13 @@ if (!emailRegex.test(formData.email)) {
                             </div>
                           </div>
                         </td>
-                        <td className="px-10 py-7">
+                        <td data-label="Animal" className="px-10 py-7">
                            <span className="px-3 py-1 bg-[#005F54] text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{r.animalType}</span>
                         </td>
-                        <td className="px-10 py-7">
+                        <td data-label="Date" className="px-10 py-7">
                           <span className="text-sm font-bold text-slate-600 flex items-center gap-1.5"><Calendar size={14} className="text-[#005F54]" /> {r.date}</span>
                         </td>
-                        <td className="px-10 py-7">
+                        <td data-label="Phone" className="px-10 py-7">
                           <span className="text-sm font-black text-slate-700">{r.phone}</span>
                         </td>
                         <td className="px-10 py-7 text-right">

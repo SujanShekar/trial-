@@ -37,6 +37,13 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { CaseStatus, Case, User as UserType, ClinicalEntry } from '../types';
+import { retryBiometrics } from '../lib/biometrics';
+
+const BiometricBadge = ({ status }: { status?: Case['biometricStatus'] }) => {
+  const labels: Record<string, string> = { none: 'Not enrolled', pending: 'Processing', processing: 'Processing', enrolled: 'Enrolled', failed: 'Failed' };
+  const value = status || 'none';
+  return <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-black uppercase ${value === 'enrolled' ? 'bg-emerald-50 text-emerald-700' : value === 'failed' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{labels[value]}</span>;
+};
 
 const DOCTOR_OPTIONS = ['Dr. Anita Desai', 'Dr. Suresh Babu', 'Other'];
 
@@ -391,6 +398,20 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
   }, [searchTerm]);
 
   useEffect(() => {
+    if (!selectedCase || !['pending', 'processing'].includes(selectedCase.biometricStatus || 'none')) return;
+    const timer = window.setInterval(async () => {
+      const response = await apiFetch(`/api/cases/${selectedCase.id}`);
+      if (response.ok) setSelectedCase(await response.json());
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [selectedCase?.id, selectedCase?.biometricStatus]);
+
+  const retryBiometricEnrollment = async (record: Case) => {
+    const response = await retryBiometrics(record.id);
+    if (response.ok) setSelectedCase({ ...record, biometricStatus: 'pending' });
+  };
+
+  useEffect(() => {
     const state = location.state as { openCaseId?: string } | null;
     if (state?.openCaseId) {
       // If we don't have the case in the current list, we fetch it
@@ -621,19 +642,20 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
       : 'cursor-not-allowed opacity-95'
   }`}
 >
-                  <td className="px-10 py-8">
+                  <td data-label="Case Details" className="px-10 py-8">
                     <div className="flex items-center gap-5">
                       <div className="w-1 h-10 bg-[#005F54] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div>
                         <p className="text-base font-black text-slate-900 tracking-tight leading-none mb-2">{c.title}</p>
                         <StatusBadge status={c.status as CaseStatus} />
+                        <div className="mt-2"><BiometricBadge status={c.biometricStatus} /></div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-10 py-8">
+                  <td data-label="Case ID" className="px-10 py-8">
                     <span className="inline-block px-3 py-1 bg-[#005F54] text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{c.caseNumber}</span>
                   </td>
-                  <td className="px-10 py-8">
+                  <td data-label="Last Clinical Entry" className="px-10 py-8">
                     <div className="flex flex-col">
                       {(() => {
                         const logs = clinicalEntries.filter(l => l.caseId === c.id);
@@ -740,9 +762,12 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">{selectedCase.title}</h2>
                     <div className="flex items-center gap-3 mt-1">
                       <StatusBadge status={selectedCase.status as CaseStatus} />
+                      <BiometricBadge status={selectedCase.biometricStatus} />
                       <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Clock size={12}/> {selectedCase.createdAt}</span>
                     </div>
                 </div>
+
+                {canManageClinicalEntries && selectedCase.biometricStatus === 'failed' && <button type="button" onClick={() => retryBiometricEnrollment(selectedCase)} className="min-h-11 rounded-xl bg-[#005F54] px-4 py-2 text-xs font-black text-white">Retry biometrics</button>}
               </div>
               
               <div className="flex items-center gap-6">
@@ -889,16 +914,16 @@ const CasesPage: React.FC<CasesPageProps> = ({ user }) => {
                       {currentCaseLogs.length > 0 ? (
                         currentCaseLogs.map((log) => (
                           <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-10 py-7 align-top">
+                            <td data-label="Date" className="px-10 py-7 align-top">
                               <span className="text-sm font-black text-slate-800 block">{log.date}</span>
                             </td>
-                            <td className="px-10 py-7 align-top">
+                            <td data-label="Diagnosis" className="px-10 py-7 align-top">
                                <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#005F54] flex items-center justify-center font-black text-[10px] border border-emerald-100 uppercase">{(log.doctorName || '?').charAt(0)}</div>
                                   <span className="text-sm font-black text-slate-700">{log.doctorName}</span>
                                </div>
                             </td>
-                            <td className="px-10 py-7 align-top">
+                            <td data-label="Treatment" className="px-10 py-7 align-top">
                               <div className="space-y-2">
                                 <p className="text-xs font-bold text-slate-800"><span className="text-[9px] uppercase text-slate-400 mr-2">Diagnosis:</span> {log.diagnosis}</p>
                                 <p className="text-xs font-medium text-slate-600"><span className="text-[9px] uppercase text-slate-400 mr-2">Treatment:</span> {log.treatment}</p>
