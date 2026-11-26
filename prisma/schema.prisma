@@ -173,6 +173,7 @@ model AdoptionApplication {
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@map("adoption_applications")
+  @@unique([appNumber])
 }
 
 model Adoption {

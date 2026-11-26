@@ -47,7 +47,7 @@ describe('App Component', () => {
     // Check for login page elements
     await waitFor(() => {
       expect(screen.getByText(/Welcome Back/i)).toBeInTheDocument();
-      expect(screen.getByPlaceholderText(/Username or your.email@example.com/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/your.email@example.com/i)).toBeInTheDocument();
     });
   });
 

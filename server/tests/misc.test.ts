@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../app';
-import { prismaMock } from './setup';
+import { authHeader, prismaMock } from './setup';
 
 describe('Misc API (Stats & Search)', () => {
   it('should fetch dashboard stats', async () => {
@@ -11,7 +11,7 @@ describe('Misc API (Stats & Search)', () => {
     prismaMock.case.findMany.mockResolvedValue([] as any); // recent
     prismaMock.medicine.count.mockResolvedValue(2); // low stock
 
-    const res = await request(app).get('/api/stats');
+    const res = await request(app).get('/api/stats').set(authHeader());
     
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('totalCases', 50);
@@ -24,7 +24,7 @@ describe('Misc API (Stats & Search)', () => {
     prismaMock.wildlifeCase.findMany.mockResolvedValue([] as any);
     prismaMock.animal.findMany.mockResolvedValue([] as any);
 
-    const res = await request(app).get('/api/search?q=dog');
+    const res = await request(app).get('/api/search?q=dog').set(authHeader());
 
     expect(res.status).toBe(200);
     expect(res.body.cases).toHaveLength(1);
@@ -32,7 +32,7 @@ describe('Misc API (Stats & Search)', () => {
   });
 
   it('should return empty results for empty query', async () => {
-    const res = await request(app).get('/api/search?q=');
+    const res = await request(app).get('/api/search?q=').set(authHeader());
     expect(res.status).toBe(200);
     expect(res.body.cases).toHaveLength(0);
   });

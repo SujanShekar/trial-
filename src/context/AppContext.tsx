@@ -72,7 +72,7 @@ interface AppContextType {
   deleteDeclaration: (id: string) => void;
   addDonation: (donation: Donation) => void;
   addAdoption: (adoption: Adoption) => void;
-  addAdoptionApplication: (application: AdoptionApplication) => void;
+  addAdoptionApplication: (application: AdoptionApplication) => Promise<AdoptionApplication | null>;
   updateAdoptionApplication: (application: AdoptionApplication) => Promise<AdoptionApplication | null>;
   addABCRecord: (record: ABCRecord) => void;
   updateABCRecord: (record: ABCRecord) => void;
@@ -496,7 +496,7 @@ export const AppProvider: React.FC<{
 
   const addAdoptionApplication = async (application: AdoptionApplication) => {
     const { id, ...data } = application;
-    await handleRequest(
+    return await handleRequest(
       "/api/adoptions/applications",
       {
         method: "POST",
@@ -505,7 +505,7 @@ export const AppProvider: React.FC<{
       },
       "Application submitted",
       (saved) => setAdoptionApplications((prev) => [saved, ...prev]),
-    );
+    ) as AdoptionApplication | null;
   };
 
   const updateAdoptionApplication = async (

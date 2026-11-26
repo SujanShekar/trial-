@@ -1,12 +1,12 @@
 import request from 'supertest';
 import app from '../app';
-import { prismaMock } from './setup';
+import { authHeader, prismaMock } from './setup';
 import { issueAuthToken } from '../auth/token';
 
 describe('General API Endpoints', () => {
   const caseAuth = `Bearer ${issueAuthToken('user-1', 'Data Entry')}`;
   it('should return health status', async () => {
-    const res = await request(app).get('/api/health');
+    const res = await request(app).get('/api/health').set(authHeader());
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('status', 'ok');
   });
@@ -115,6 +115,7 @@ describe('General API Endpoints', () => {
 
     const res = await request(app)
       .patch('/api/animals/animal-1')
+      .set(authHeader())
       .send(payload);
 
     expect(res.status).toBe(200);

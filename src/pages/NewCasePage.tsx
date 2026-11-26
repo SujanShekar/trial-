@@ -33,6 +33,7 @@ const NewCasePage: React.FC = () => {
   const areaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const noseVideoInputRef = useRef<HTMLInputElement>(null);
   
   // Skip selection view if coming from declaration redirection
   const fromDeclaration = location.state?.fromDeclaration || false;
@@ -46,6 +47,7 @@ const NewCasePage: React.FC = () => {
   const [customAreaInput, setCustomAreaInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [selectedNoseVideo, setSelectedNoseVideo] = useState<File | null>(null);
   const [caseNumberError, setCaseNumberError] = useState('');
   
   // Helper to get formatted current time matching INITIAL_CASES format (24h)
@@ -168,6 +170,7 @@ const NewCasePage: React.FC = () => {
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedVideo(e.target.files?.[0] || null);
   };
+  const handleNoseVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => setSelectedNoseVideo(e.target.files?.[0] || null);
 const isFormValid =
   formData.caseNumber.trim() !== '' &&
   formData.rescueArea.trim() !== '' &&
@@ -269,6 +272,7 @@ const isFormValid =
 
   let finalImageUrl = selectedImage || undefined;
   let finalVideoUrl: string | undefined;
+  let finalNoseVideoUrl: string | undefined;
 
   // Simulation Upload Logic
   if (selectedImage && selectedImage.startsWith('data:')) {
@@ -296,6 +300,10 @@ const isFormValid =
       console.error('Video upload failed:', error);
     }
   }
+  if (selectedNoseVideo) {
+    try { finalNoseVideoUrl = await uploadFile(selectedNoseVideo) || undefined; }
+    catch (error) { console.error('Nose video upload failed:', error); }
+  }
 
   // Get current user from local session
   const savedUser = localStorage.getItem('pfa_user_session');
@@ -318,6 +326,8 @@ Reporter Address: ${trimmedCompAddress}`,
     // reportedById: user?.id,
     imageUrl: finalImageUrl,
     videoUrl: finalVideoUrl,
+    bodyVideoUrl: finalVideoUrl,
+    noseVideoUrl: finalNoseVideoUrl,
     createdAt: new Date().toISOString()
   };
 
@@ -592,7 +602,7 @@ Reporter Address: ${trimmedCompAddress}`,
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Video (optional)</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Body video (optional)</label>
               <input
                 type="file"
                 accept="video/*"
@@ -609,7 +619,7 @@ Reporter Address: ${trimmedCompAddress}`,
                 </div>
                 <div className="text-sm flex-1">
                   <p className={`font-black uppercase text-xs tracking-widest ${selectedVideo ? 'text-[#005F54]' : 'text-slate-700'}`}>{selectedVideo ? 'Video selected' : 'Scene video'}</p>
-                  <p className="text-slate-400 text-xs font-medium mt-1">{selectedVideo?.name || 'Upload an optional video from the rescue scene.'}</p>
+                  <p className="text-slate-400 text-xs font-medium mt-1">{selectedVideo?.name || 'Full body, with the dog clearly visible.'}</p>
                 </div>
                 {selectedVideo && (
                   <button
@@ -620,6 +630,13 @@ Reporter Address: ${trimmedCompAddress}`,
                     <X size={16} />
                   </button>
                 )}
+              </div>
+              <label className="mt-5 block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nose video (optional)</label>
+              <input type="file" accept="video/*" className="hidden" ref={noseVideoInputRef} onChange={handleNoseVideoChange} />
+              <div onClick={() => noseVideoInputRef.current?.click()} className={`mt-2 flex items-center gap-4 p-5 rounded-[2rem] border-2 border-dashed transition-all group cursor-pointer ${selectedNoseVideo ? 'bg-emerald-50 border-[#005F54]' : 'bg-slate-50 border-slate-200 hover:border-[#005F54]/50'}`}>
+                <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center border border-slate-200 text-[#005F54]"><Camera size={24} /></div>
+                <div className="text-sm flex-1"><p className="font-black uppercase text-xs tracking-widest">{selectedNoseVideo ? 'Nose video selected' : 'Close-up of snout'}</p><p className="text-slate-400 text-xs font-medium mt-1">{selectedNoseVideo?.name || 'Film the nose closely in good light.'}</p></div>
+                {selectedNoseVideo && <button type="button" aria-label="Remove nose video" onClick={e => { e.stopPropagation(); setSelectedNoseVideo(null); if (noseVideoInputRef.current) noseVideoInputRef.current.value = ''; }} className="min-w-11 min-h-11 p-2 bg-rose-50 text-rose-500 rounded-xl"><X size={16} /></button>}
               </div>
             </div>
           </div>

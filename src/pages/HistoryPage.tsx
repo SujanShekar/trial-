@@ -1,5 +1,7 @@
 
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { identifyDog } from '../lib/biometrics';
 import { 
   Upload, 
   FileSearch, 
@@ -23,11 +25,13 @@ interface HistoryRecord {
 }
 
 const HistoryPage: React.FC = () => {
+  const navigate = useNavigate();
   // Extraction state
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<HistoryRecord | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [identifyResult, setIdentifyResult] = useState<{ state: 'match' | 'none' | 'unavailable' | 'error'; case?: any; score?: number } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const processFile = async (file: File) => {
@@ -120,6 +124,19 @@ const HistoryPage: React.FC = () => {
     setIsScanning(false);
   };
 
+  const handleIdentify = async (file?: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      setIdentifyResult({ state: 'error' }); return;
+    }
+    try {
+      const response = await identifyDog(file);
+      if (response.status === 503) return setIdentifyResult({ state: 'unavailable' });
+      const data = await response.json();
+      setIdentifyResult(data.status === 'MATCH' ? { state: 'match', case: data.topMatch.case, score: data.topMatch.score } : { state: 'none' });
+    } catch { setIdentifyResult({ state: 'unavailable' }); }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header */}
@@ -139,6 +156,16 @@ const HistoryPage: React.FC = () => {
           </button>
         )}
       </div>
+
+      <section className="max-w-4xl mx-auto bg-white rounded-[2rem] border border-slate-100 p-5 sm:p-8 no-print">
+        <h2 className="font-black text-slate-800">Identify dog</h2>
+        <p className="mt-1 text-sm text-slate-500">Upload a JPEG or PNG photo (10MB maximum). This photo is used only for this search.</p>
+        <label className="mt-4 inline-flex min-h-11 items-center cursor-pointer rounded-xl bg-[#005F54] px-4 py-2 text-xs font-black uppercase tracking-widest text-white"><Upload size={16} className="mr-2" />Choose photo<input className="hidden" type="file" accept="image/jpeg,image/png" onChange={e => handleIdentify(e.target.files?.[0])} /></label>
+        {identifyResult?.state === 'match' && <div className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm"><b>MATCH</b>: {identifyResult.case.caseNumber} — {identifyResult.case.title} ({Math.round((identifyResult.score || 0) * 100)}%) <button className="ml-2 underline font-bold" onClick={() => navigate(`/cases/${identifyResult.case.id}/edit`)}>Open case</button></div>}
+        {identifyResult?.state === 'none' && <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm font-bold">No matching dog was found.</p>}
+        {identifyResult?.state === 'unavailable' && <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-bold">Identification is temporarily unavailable. Please try again later.</p>}
+        {identifyResult?.state === 'error' && <p className="mt-4 rounded-xl bg-rose-50 p-4 text-sm font-bold">Please choose a JPEG or PNG image smaller than 10MB.</p>}
+      </section>
 
       <div className="max-w-4xl mx-auto">
         {!scannedData && !isScanning ? (

@@ -33,13 +33,13 @@ router.post('/identify', requireRole(['Admin', 'Doctor', 'Data Entry']), (req, r
 router.post('/retry/:caseId', requireRole(['Admin', 'Doctor']), async (req, res) => {
   const record = await prisma.case.findUnique({ where: { id: req.params.caseId } });
   if (!record || record.biometricStatus !== 'failed') return res.status(404).json({ error: 'Failed biometric record not found' });
-  await enqueue(record.id); res.status(202).json({ queued: true });
+  await enqueue(record.id).catch(() => console.error(`[biometrics] enqueue failed for ${record.id}`)); res.status(202).json({ queued: true });
 });
 
 router.post('/re-enroll-all', requireRole(['Admin']), async (_req, res) => {
   if (!enabled()) return res.status(503).json({ error: 'Biometric service is unavailable' });
   const rows = await prisma.case.findMany({ where: { biometricStatus: { in: ['none', 'failed'] }, OR: [{ noseVideoUrl: { not: null } }, { bodyVideoUrl: { not: null } }, { videoUrl: { not: null } }] }, select: { id: true } });
-  rows.forEach(row => void enqueue(row.id));
+  rows.forEach(row => { void enqueue(row.id).catch(() => console.error(`[biometrics] enqueue failed for ${row.id}`)); });
   res.status(202).json({ queued: rows.length });
 });
 

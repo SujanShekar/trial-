@@ -1,18 +1,18 @@
 import request from 'supertest';
 import app from '../app';
-import { prismaMock } from './setup';
+import { authHeader, prismaMock } from './setup';
 import { issueAuthToken } from '../auth/token';
 
 describe('Transactional & Other Entity APIs', () => {
   it('should create a wildlife case', async () => {
     prismaMock.wildlifeCase.create.mockResolvedValue({ id: 'w-1' } as any);
-    const res = await request(app).post('/api/wildlife').send({ caseNumber: 'W001', animal: 'Eagle' });
+    const res = await request(app).post('/api/wildlife').set(authHeader('Data Entry')).send({ caseNumber: 'W001', dateTime: '2026-01-01', animal: 'Eagle', species: 'Bird', schedule: 'Immediate', location: 'Mysuru', status: 'Open', complainantName: 'Asha', complainantPhone: '9876543210' });
     expect(res.status).toBe(201);
   });
 
   it('should create a staff member', async () => {
     prismaMock.staffMember.create.mockResolvedValue({ id: 's-1' } as any);
-    const res = await request(app).post('/api/staff').send({ name: 'John', role: 'Vet' });
+    const res = await request(app).post('/api/staff').set(authHeader()).send({ name: 'John', role: 'Vet' });
     expect(res.status).toBe(201);
   });
 
@@ -29,33 +29,33 @@ describe('Transactional & Other Entity APIs', () => {
 
   it('should create a donation', async () => {
     prismaMock.donation.create.mockResolvedValue({ id: 'd-1' } as any);
-    const res = await request(app).post('/api/donations').send({ donorName: 'Alice', amount: 50.5 });
+    const res = await request(app).post('/api/donations').set(authHeader()).send({ donorName: 'Alice', amount: 50.5 });
     expect(res.status).toBe(201);
   });
 
   it('should create an adoption record', async () => {
     prismaMock.adoption.create.mockResolvedValue({ id: 'a-1' } as any);
-    const res = await request(app).post('/api/adoptions').send({ animalId: '1', userId: '1', status: 'pending' });
+    const res = await request(app).post('/api/adoptions').set(authHeader()).send({ animalId: '1', userId: '1', status: 'pending' });
     expect(res.status).toBe(201);
   });
 
   it('should fetch abc records', async () => {
     prismaMock.aBCRecord.findMany.mockResolvedValue([{ id: 'abc-1', sterilized: true }] as any);
-    const res = await request(app).get('/api/abc-records');
+    const res = await request(app).get('/api/abc-records').set(authHeader('Data Entry'));
     expect(res.status).toBe(200);
     expect(res.body).toEqual([{ id: 'abc-1', sterilized: true }]);
   });
 
   it('should create an abc record', async () => {
     prismaMock.aBCRecord.create.mockResolvedValue({ id: 'abc-1', sterilized: true } as any);
-    const res = await request(app).post('/api/abc-records').send({ sterilized: true, vaccinationDone: true, surgeryDate: '2025-01-01' });
+    const res = await request(app).post('/api/abc-records').set(authHeader('Data Entry')).send({ sterilized: true, vaccinationDone: true, surgeryDate: '2025-01-01' });
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('id', 'abc-1');
   });
 
   it('should sanitize and parse abc record input data correctly', async () => {
     prismaMock.aBCRecord.create.mockResolvedValue({ id: 'abc-1', animalId: null, maleCount: 5, femaleCount: null } as any);
-    const res = await request(app).post('/api/abc-records').send({
+    const res = await request(app).post('/api/abc-records').set(authHeader('Data Entry')).send({
       animalId: '',
       maleCount: '5',
       femaleCount: '',
@@ -97,14 +97,14 @@ describe('Transactional & Other Entity APIs', () => {
 
   it('should update an abc record', async () => {
     prismaMock.aBCRecord.update.mockResolvedValue({ id: 'abc-1', sterilized: false } as any);
-    const res = await request(app).patch('/api/abc-records/abc-1').send({ sterilized: false });
+    const res = await request(app).patch('/api/abc-records/abc-1').set(authHeader('Data Entry')).send({ sterilized: false });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('sterilized', false);
   });
 
   it('should delete an abc record', async () => {
     prismaMock.aBCRecord.delete.mockResolvedValue({ id: 'abc-1' } as any);
-    const res = await request(app).delete('/api/abc-records/abc-1');
+    const res = await request(app).delete('/api/abc-records/abc-1').set(authHeader('Data Entry'));
     expect(res.status).toBe(204);
   });
 });

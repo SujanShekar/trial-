@@ -20,7 +20,6 @@ import {
   Search
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { findDuplicate } from '../lib/uniqueness';
 import { AdoptionApplication } from '../types';
 
 const UnderlineInput = ({ label, value, onChange, placeholder, width = "full", type = "text", disabled = false }: any) => {
@@ -63,7 +62,7 @@ const FormContent = ({
   };
 
   return (
-    <div className="relative bg-white min-h-[1100px] shadow-2xl rounded-sm p-8 md:p-20 overflow-hidden text-left">
+    <div className="relative min-w-0 bg-white min-h-0 md:min-h-[1100px] shadow-2xl rounded-sm p-4 sm:p-8 md:p-20 overflow-visible md:overflow-hidden text-left">
       <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 bg-[#005F54] rounded-full flex items-center justify-center text-white font-black text-2xl shadow-sm">PFA</div>
@@ -165,7 +164,7 @@ const FormContent = ({
 };
 
 const DeclarationContent = ({ data, isPreview = false }: { data: any, isPreview?: boolean }) => (
-  <div className="relative bg-white min-h-[1100px] shadow-2xl rounded-sm p-8 md:p-20 overflow-hidden text-left">
+  <div className="relative min-w-0 bg-white min-h-0 md:min-h-[1100px] shadow-2xl rounded-sm p-4 sm:p-8 md:p-20 overflow-visible md:overflow-hidden text-left">
     <div className="flex flex-col items-center text-center gap-4 mb-12">
       <div className="w-16 h-16 bg-[#005F54] rounded-full flex items-center justify-center text-white font-black text-2xl shadow-sm">PFA</div>
       <div>
@@ -178,7 +177,7 @@ const DeclarationContent = ({ data, isPreview = false }: { data: any, isPreview?
 
     <div className="space-y-10 leading-[3]">
       <div className="text-sm font-bold text-slate-700 leading-loose text-justify">
-        I, Mr. / Mrs. / Ms. <span className="inline-block px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[250px] italic leading-tight">{data.adopterName || "...................................................."}</span> residing at <span className="inline-block px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[300px] italic leading-tight">{data.address || "...................................................."}</span> Tel/Mob: <span className="inline-block px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[150px] italic leading-tight">{data.phone || "................................"}</span> Email: <span className="inline-block px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[200px] italic leading-tight">{data.email || "................................"}</span> declare as follows:
+        I, Mr. / Mrs. / Ms. <span className="inline-block max-w-full break-words px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[8rem] md:min-w-[250px] italic leading-tight">{data.adopterName || "...................................................."}</span> residing at <span className="inline-block max-w-full break-words px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[8rem] md:min-w-[300px] italic leading-tight">{data.address || "...................................................."}</span> Tel/Mob: <span className="inline-block max-w-full break-words px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[8rem] md:min-w-[150px] italic leading-tight">{data.phone || "................................"}</span> Email: <span className="inline-block max-w-full break-words px-4 font-black text-[#1e40af] border-b border-slate-300 min-w-[8rem] md:min-w-[200px] italic leading-tight">{data.email || "................................"}</span> declare as follows:
       </div>
 
       <div className="space-y-6 text-sm font-bold text-slate-600 text-justify bg-slate-50/30 p-4 md:p-8 rounded-lg border border-slate-100 leading-relaxed">
@@ -208,7 +207,6 @@ const AdoptionsPage: React.FC = () => {
   const [editData, setEditData] = useState<AdoptionApplication | null>(null);
 
   const [formData, setFormData] = useState({
-    appNumber: `2024-${adoptionApplications.length + 233}`,
     adopterName: '',
     adopterAge: '',
     adopterGender: 'Male',
@@ -225,9 +223,7 @@ const AdoptionsPage: React.FC = () => {
     location: 'Main Sanctuary'
   });
 
-  const handleFinalize = () => {
-  const duplicate = findDuplicate(formData.appNumber, adoptionApplications.map(application => application.appNumber));
-  if (duplicate) { alert(`Similar item exists: ${duplicate}`); return; }
+  const handleFinalize = async () => {
   const requiredFields = [
     formData.adopterName,
     formData.adopterAge,
@@ -251,14 +247,15 @@ const AdoptionsPage: React.FC = () => {
     return;
   }
 
-  const newRecord: AdoptionApplication = {
+  const newRecord = {
     id: `APP-${Date.now().toString().slice(-4)}`,
     ...formData,
     status: 'In Review',
     createdAt: new Date().toISOString()
   };
 
-  addAdoptionApplication(newRecord);
+  const saved = await addAdoptionApplication(newRecord as AdoptionApplication);
+  if (!saved) return;
 
   alert("Adoption Application successfully registered.");
 
@@ -266,7 +263,6 @@ const AdoptionsPage: React.FC = () => {
   setFormStep(1);
 
   setFormData({
-    appNumber: `2024-${adoptionApplications.length + 234}`,
     adopterName: '',
     adopterAge: '',
     adopterGender: 'Male',
@@ -500,17 +496,17 @@ if (!emailRegex.test(formData.email)) {
       )}
 
       {viewingRecord && (
-        <div className="fixed inset-0 z-[200] flex justify-center items-start p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto pt-10 md:pt-20 no-print">
-          <div className="relative w-full max-w-5xl animate-in slide-in-from-bottom-8 duration-300 mb-20 space-y-12">
-            <div className="flex justify-between items-center bg-white/20 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl">
-               <div className="flex items-center gap-4">
+        <div className="fixed inset-0 z-[200] block p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto pt-6 md:pt-20 no-print">
+          <div className="relative mx-auto w-full max-w-5xl min-w-0 animate-in slide-in-from-bottom-8 duration-300 mb-20 space-y-6 sm:space-y-12">
+            <div className="flex flex-wrap gap-3 justify-between items-center bg-white/20 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-white/20 shadow-2xl">
+               <div className="flex min-w-0 items-center gap-4">
                  <div className="w-12 h-12 bg-[#005F54] text-white rounded-2xl flex items-center justify-center shadow-xl"><FileText size={24} /></div>
                  <div>
                    <h2 className="text-white text-xl font-black uppercase tracking-widest">{isEditing ? 'Editing Form' : 'Form View'}</h2>
-                   <p className="text-emerald-100/70 text-[10px] font-black uppercase tracking-widest">ID: {viewingRecord.id}</p>
+                   <p className="max-w-full break-all text-emerald-100/70 text-[10px] font-black uppercase tracking-widest">ID: {viewingRecord.id.slice(0, 8)}…</p>
                  </div>
                </div>
-               <div className="flex gap-4">
+               <div className="flex flex-wrap gap-3">
                  {isEditing ? (
                    <>
                      <button onClick={handleSaveEdit} className="flex items-center gap-2 px-6 py-3 bg-[#005F54] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-600 transition-all"><CheckCircle size={16} /> Save Changes</button>
@@ -518,9 +514,9 @@ if (!emailRegex.test(formData.email)) {
                    </>
                  ) : (
                    <>
-                     <button onClick={handleEditClick} className="flex items-center gap-2 px-6 py-3 bg-[#005F54] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-600 transition-all"><PenTool size={16} /> Edit</button>
-                     <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-50 transition-all"><Printer size={16} /> Print</button>
-                     <button onClick={() => { setViewingRecord(null); setIsEditing(false); setEditData(null); }} className="p-3 bg-rose-500 text-white rounded-2xl shadow-xl hover:bg-rose-600 transition-all"><X size={24} /></button>
+                     <button aria-label="Edit form" onClick={handleEditClick} className="flex min-h-11 items-center gap-2 px-3 sm:px-6 py-3 bg-[#005F54] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-600 transition-all"><PenTool size={16} /><span className="hidden sm:inline">Edit</span></button>
+                     <button aria-label="Print form" onClick={handlePrint} className="flex min-h-11 items-center gap-2 px-3 sm:px-6 py-3 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-50 transition-all"><Printer size={16} /><span className="hidden sm:inline">Print</span></button>
+                     <button aria-label="Close form" onClick={() => { setViewingRecord(null); setIsEditing(false); setEditData(null); }} className="min-h-11 min-w-11 p-3 bg-rose-500 text-white rounded-2xl shadow-xl hover:bg-rose-600 transition-all"><X size={24} /></button>
                    </>
                  )}
                </div>

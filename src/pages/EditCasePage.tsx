@@ -19,6 +19,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { Case, CaseStatus } from '../types';
 import { uploadFile, base64ToFile } from '../lib/storage';
+import { retryBiometrics } from '../lib/biometrics';
 
 const EditCasePage: React.FC = () => {
   const { caseId } = useParams();
@@ -27,7 +28,11 @@ const EditCasePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [targetCase, setTargetCase] = useState<Case | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const noseVideoInputRef = useRef<HTMLInputElement>(null);
+  const bodyVideoInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [noseVideo, setNoseVideo] = useState<File | null>(null);
+  const [bodyVideo, setBodyVideo] = useState<File | null>(null);
   const [caseNumberError, setCaseNumberError] = useState('');
 
   const [formData, setFormData] = useState({
@@ -103,6 +108,8 @@ const EditCasePage: React.FC = () => {
 
     if (targetCase) {
       let finalImageUrl = selectedImage || undefined;
+      let noseVideoUrl = targetCase.noseVideoUrl;
+      let bodyVideoUrl = targetCase.bodyVideoUrl || targetCase.videoUrl;
 
       // Simulation Upload Logic (only if it's a new base64 image)
       if (selectedImage && selectedImage.startsWith('data:')) {
@@ -116,6 +123,8 @@ const EditCasePage: React.FC = () => {
           console.error('Simulation upload failed:', error);
         }
       }
+      if (noseVideo) noseVideoUrl = await uploadFile(noseVideo) || undefined;
+      if (bodyVideo) bodyVideoUrl = await uploadFile(bodyVideo) || undefined;
 
       const updatedCase: Case = {
         ...targetCase,
@@ -125,6 +134,8 @@ const EditCasePage: React.FC = () => {
         description: formData.description,
         status: formData.status,
         imageUrl: finalImageUrl,
+        noseVideoUrl,
+        bodyVideoUrl,
       };
 
       const savedCase = await updateCase(updatedCase);
@@ -256,6 +267,11 @@ const EditCasePage: React.FC = () => {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nose video</label><input ref={noseVideoInputRef} className="mt-2 block w-full text-sm" type="file" accept="video/*" onChange={e => setNoseVideo(e.target.files?.[0] || null)} /><p className="text-xs text-slate-400">Close-up of the snout. A replacement re-enrols this stream.</p></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Body video</label><input ref={bodyVideoInputRef} className="mt-2 block w-full text-sm" type="file" accept="video/*" onChange={e => setBodyVideo(e.target.files?.[0] || null)} /><p className="text-xs text-slate-400">Full body in frame. A replacement re-enrols this stream.</p></div>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4 text-sm"><b>Biometrics:</b> {targetCase?.biometricStatus || 'Not enrolled'} {targetCase?.biometricStatus === 'failed' && <button className="ml-3 min-h-11 rounded-lg bg-[#005F54] px-3 text-xs font-bold text-white" onClick={async () => { if (targetCase) { await retryBiometrics(targetCase.id); setTargetCase({ ...targetCase, biometricStatus: 'pending' }); } }}>Retry</button>}</div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Detail</label>
               <textarea 

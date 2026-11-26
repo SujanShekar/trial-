@@ -25,7 +25,7 @@ describe('LoginPage', () => {
 
   it('allows user to type credentials', () => {
     renderLogin();
-    const emailInput = screen.getByPlaceholderText(/Username or your.email@example.com/i) as HTMLInputElement;
+    const emailInput = screen.getByPlaceholderText(/your.email@example.com/i) as HTMLInputElement;
     const passwordInput = screen.getByPlaceholderText(/••••••••/i) as HTMLInputElement;
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });

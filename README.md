@@ -27,6 +27,19 @@ A comprehensive portal for managing animal rescues, clinical cases, wildlife, in
 
 ### Database Setup
 
+For a fresh local database, run:
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+# Optional sample data
+npx prisma db seed
+```
+
+For an existing database with cases, first apply migrations through
+`20261011000000`, run `npm run backfill:case-numbers`, then deploy the remaining
+migrations and regenerate Prisma.
+
 1. **Install PostgreSQL**:
    - Download and install PostgreSQL from the official website: [https://www.postgresql.org/download/](https://www.postgresql.org/download/)
    - During installation, set a password for the default `postgres` user (remember this password).

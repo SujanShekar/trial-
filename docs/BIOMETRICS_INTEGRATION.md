@@ -10,6 +10,29 @@ Create or edit a case with a nose and/or body video. The request returns immedia
 
 Statuses are `none`, `pending`, `processing`, `enrolled`, and `failed`. The queue retries service/timeout/5xx failures up to `BIOMETRIC_MAX_ATTEMPTS`; model 400 responses fail immediately.
 
+## Data flow
+
+```
+create/edit case -> upload nose/body streams -> queue -> POST /api/v1/register
+                                               -> enrolled metadata saved on case
+photo upload -> POST /api/v1/identify -> portal database case lookup -> MATCH/UNKNOWN
+```
+
+`BIOMETRIC_ENABLED`, `BIOMETRIC_SERVICE_URL`, `BIOMETRIC_REGISTER_TIMEOUT_MS`,
+`BIOMETRIC_IDENTIFY_TIMEOUT_MS`, and `BIOMETRIC_MAX_ATTEMPTS` are described in
+`.env.example`. Use `npm run mock:biometrics` to run a contract-compatible local
+service while developing.
+
+The register request is multipart: `case_id`, optional `nose_video`, and optional
+`body_video`. Vidog responds with JSON such as
+`{"ok":true,"metadata":{"case_id":"uuid"}}`. Identify accepts multipart
+`image` and responds with `{"top_match":{"case_id":"uuid","similarity_score":0.94},"candidates":[]}`.
+The portal does not store identification query photos.
+
+Install the model service prerequisites explicitly: `pip install fastapi uvicorn
+python-multipart`. The model repository's requirements file omits
+`python-multipart`, and FastAPI will not start without it.
+
 ## Go-live checklist
 
 - Bind the Python service to `127.0.0.1` only; do not use the handoff's `0.0.0.0` command. Firewall port 8000.

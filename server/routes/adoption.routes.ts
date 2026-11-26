@@ -19,13 +19,23 @@ router.get('/applications', async (req, res) => {
 });
 
 router.post('/applications', async (req, res) => {
+  const data = sanitizeData(req.body);
+  delete data.appNumber;
+  const year = new Date().getFullYear();
   try {
-    const data = sanitizeData(req.body);
-    const existing = await prisma.adoptionApplication.findMany({ select: { id: true, appNumber: true } });
-    const duplicate = findDuplicate(String(data.appNumber || ''), existing.map(item => item.appNumber));
-    if (duplicate) return res.status(409).json({ error: `Application number already exists: '${duplicate.match}'.` });
-    const appRecord = await prisma.adoptionApplication.create({ data });
-    res.status(201).json(appRecord);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const existing = await prisma.adoptionApplication.findMany({ select: { appNumber: true } });
+      const used = new Set(existing.map(item => item.appNumber));
+      let sequence = 1;
+      let appNumber = `APP-${year}-${String(sequence).padStart(4, '0')}`;
+      while (used.has(appNumber)) appNumber = `APP-${year}-${String(++sequence).padStart(4, '0')}`;
+      try {
+        const appRecord = await prisma.adoptionApplication.create({ data: { ...data, appNumber } });
+        return res.status(201).json(appRecord);
+      } catch (error: any) {
+        if (error?.code !== 'P2002' || attempt) throw error;
+      }
+    }
   } catch (error: any) {
     if (error?.code === 'P2002') return res.status(409).json({ error: 'Application number already exists.' });
     sendError(res, error, 'Failed to create adoption application');

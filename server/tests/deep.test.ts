@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../app';
-import { prismaMock } from './setup';
+import { authHeader, prismaMock } from './setup';
 
 describe('Deep API Logic & Edge Cases', () => {
   
@@ -12,6 +12,7 @@ describe('Deep API Logic & Edge Cases', () => {
 
       const res = await request(app)
         .get('/api/cases')
+        .set(authHeader('Data Entry'))
         .query({ 
           page: 2, 
           limit: 10, 
@@ -41,7 +42,7 @@ describe('Deep API Logic & Edge Cases', () => {
     it('should return 404 for non-existent case', async () => {
       prismaMock.case.findUnique.mockResolvedValue(null);
       
-      const res = await request(app).get('/api/cases/non-existent-id');
+      const res = await request(app).get('/api/cases/non-existent-id').set(authHeader('Data Entry'));
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('error', 'Case not found');
     });
@@ -56,7 +57,7 @@ describe('Deep API Logic & Edge Cases', () => {
         .post('/api/auth/register')
         .send({ email: 'duplicate@example.com', password: '123' });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
       expect(res.body).toHaveProperty('error', 'Email already exists');
     });
   });
@@ -65,7 +66,7 @@ describe('Deep API Logic & Edge Cases', () => {
     it('should correctly handle animal deletion', async () => {
       prismaMock.animal.delete.mockResolvedValue({ id: 'animal-1' } as any);
 
-      const res = await request(app).delete('/api/animals/animal-1');
+      const res = await request(app).delete('/api/animals/animal-1').set(authHeader());
       
       expect(res.status).toBe(204);
       expect(prismaMock.animal.delete).toHaveBeenCalledWith({
@@ -78,6 +79,7 @@ describe('Deep API Logic & Edge Cases', () => {
 
       const res = await request(app)
         .patch('/api/inventory/housekeeping/h1')
+        .set(authHeader('Data Entry'))
         .send({ quantity: 20 });
 
       expect(res.status).toBe(200);

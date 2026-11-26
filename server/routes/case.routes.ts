@@ -188,7 +188,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Case number is required' });
     }
     const trimmedCaseNumber = caseNumber.trim();
-    const existing = await prisma.case.findMany({ select: { id: true, caseNumber: true } });
+    const existing = await prisma.case.findMany({ where: { OR: [{ caseNumber: { equals: trimmedCaseNumber, mode: 'insensitive' } }, { caseNumber: { startsWith: trimmedCaseNumber.slice(0, 4), mode: 'insensitive' } }] }, select: { id: true, caseNumber: true } });
     const duplicate = findDuplicate(trimmedCaseNumber, (existing ?? []).flatMap(item => item.caseNumber ? [item.caseNumber] : []));
     if (duplicate) return res.status(409).json({ error: 'Case number already exists' });
 
@@ -201,7 +201,7 @@ router.post('/', async (req, res) => {
         ,...(typeof bodyVideoUrl === 'string' && bodyVideoUrl ? { bodyVideoUrl } : {})
       }
     });
-    if (noseVideoUrl || bodyVideoUrl) { void enqueue(newCase.id); }
+    if (noseVideoUrl || bodyVideoUrl) { void enqueue(newCase.id).catch(() => console.error(`[biometrics] enqueue failed for ${newCase.id}`)); }
     res.status(201).json(newCase);
 
   } catch (error: any) {
@@ -227,7 +227,7 @@ router.patch('/:id', async (req, res) => {
         return res.status(400).json({ error: 'Case number is required' });
       }
       data.caseNumber = data.caseNumber.trim();
-      const existing = await prisma.case.findMany({ select: { id: true, caseNumber: true } });
+      const existing = await prisma.case.findMany({ where: { OR: [{ caseNumber: { equals: data.caseNumber, mode: 'insensitive' } }, { caseNumber: { startsWith: data.caseNumber.slice(0, 4), mode: 'insensitive' } }] }, select: { id: true, caseNumber: true } });
       const duplicate = findDuplicate(data.caseNumber, (existing ?? []).filter(item => item.id !== req.params.id).flatMap(item => item.caseNumber ? [item.caseNumber] : []));
       if (duplicate) return res.status(409).json({ error: 'Case number already exists' });
     }
@@ -235,7 +235,7 @@ router.patch('/:id', async (req, res) => {
       where: { id: req.params.id },
       data
     });
-    if (biometricVideoChanged) void enqueue(updatedCase.id);
+    if (biometricVideoChanged) void enqueue(updatedCase.id).catch(() => console.error(`[biometrics] enqueue failed for ${updatedCase.id}`));
     res.json(updatedCase);
   } catch (error: any) {
     if (error?.code === 'P2002') return res.status(409).json({ error: 'Case number already exists' });

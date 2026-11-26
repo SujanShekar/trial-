@@ -138,11 +138,13 @@ const StaffPage: React.FC = () => {
       updateStaff({
         ...selectedStaff,
         ...formData,
+        salary: formData.salary ? Number(formData.salary) : 0,
       });
     } else {
       const newStaff: StaffMember = {
         id: `s-${Date.now()}`,
         ...formData,
+        salary: formData.salary ? Number(formData.salary) : 0,
         createdAt: new Date().toISOString()
       };
       addStaff(newStaff);
